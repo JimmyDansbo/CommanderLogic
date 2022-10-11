@@ -1,7 +1,12 @@
 *=$F000+($100*8)-(40*8)
+; VERA font starts at address $1F0000 and is 256 bytes.
+; The bank of the VRAM is set when loading the binary
+; The modified characters occopies the last part of the
+; Font. The calculation above is:
+; $F000+(256 characters of 8 bytes each)-(40 characters of 8 bytes each)
 
 ; *************** Connected wires **********************
-; Left Tee, connected
+; Left Tee, connected - $D8
 	!byte	%...##...
 	!byte	%...##...
 	!byte	%..####..
@@ -11,7 +16,7 @@
 	!byte	%...##...
 	!byte	%...##...
 
-; Right Tee, connected
+; Right Tee, connected - $D9
 	!byte	%...##...
 	!byte	%...##...
 	!byte	%..####..
@@ -21,7 +26,7 @@
 	!byte	%...##...
 	!byte	%...##...
 
-; Top Tee, connected
+; Top Tee, connected - $DA
 	!byte	%...##...
 	!byte	%...##...
 	!byte	%..####..
@@ -31,7 +36,7 @@
 	!byte	%........
 	!byte	%........
 
-;Bottom Tee, connected
+;Bottom Tee, connected - $DB
 	!byte	%........
 	!byte	%........
 	!byte	%..####..
@@ -41,7 +46,7 @@
 	!byte	%...##...
 	!byte	%...##...
 
-; Cross, connected
+; Cross, connected - $DC
 	!byte	%...##...
 	!byte	%...##...
 	!byte	%..####..
@@ -52,7 +57,7 @@
 	!byte	%...##...
 
 ; ******************* AND/NAND *************************
-; Top left of AND
+; Top left of AND - $DD
 	!byte	%........
 	!byte	%....####
 	!byte	%....####
@@ -62,7 +67,7 @@
 	!byte	%....##..
 	!byte	%....##..
 
-; Top left of AND inverted input
+; Top left of AND inverted input - $DE
 	!byte	%........
 	!byte	%....####
 	!byte	%.##.####
@@ -72,7 +77,7 @@
 	!byte	%....##..
 	!byte	%....##..
 
-; Left mid of AND
+; Left mid of AND - $DF
 	!byte	%....##..
 	!byte	%....##..
 	!byte	%....##..
@@ -82,7 +87,7 @@
 	!byte	%....##..
 	!byte	%....##..
 
-; Bottom Left of AND
+; Bottom Left of AND - $E0
 	!byte	%....##..
 	!byte	%....##..
 	!byte	%....##..
@@ -92,7 +97,7 @@
 	!byte	%....####
 	!byte	%........
 
-; Bottom Left of AND inverted input
+; Bottom Left of AND inverted input - $E1
 	!byte	%....##..
 	!byte	%....##..
 	!byte	%.##.##..
@@ -102,7 +107,7 @@
 	!byte	%....####
 	!byte	%........
 
-; Top mid of AND
+; Top mid of AND - $E2
 	!byte	%........
 	!byte	%######..
 	!byte	%########
@@ -112,7 +117,7 @@
 	!byte	%........
 	!byte	%........
 
-; Bottom mid of AND
+; Bottom mid of AND - $E3
 	!byte	%........
 	!byte	%........
 	!byte	%........
@@ -122,7 +127,7 @@
 	!byte	%######..
 	!byte	%........
 
-; Top right of AND
+; Top right of AND - $E4
 	!byte	%........
 	!byte	%........
 	!byte	%........
@@ -132,7 +137,7 @@
 	!byte	%.##.....
 	!byte	%.##.....
 
-; Bottom right of AND
+; Bottom right of AND - $E5
 	!byte	%.##.....
 	!byte	%.##.....
 	!byte	%##......
@@ -142,7 +147,7 @@
 	!byte	%........
 	!byte	%........
 
-; Right mid of AND
+; Right mid of AND - $E6
 	!byte	%..##....
 	!byte	%..##....
 	!byte	%...#....
@@ -152,7 +157,7 @@
 	!byte	%..##....
 	!byte	%..##....
 
-; Right mid of NAND
+; Right mid of NAND - $E7
 	!byte	%..##....
 	!byte	%..##....
 	!byte	%...#.##.
@@ -163,7 +168,7 @@
 	!byte	%..##....
 
 ; ******************* OR/NOR *************************
-; Top left OR
+; Top left OR - $E8
 	!byte	%........
 	!byte	%....####
 	!byte	%....####
@@ -173,7 +178,7 @@
 	!byte	%......##
 	!byte	%......##
 
-; Top left OR inverted input
+; Top left OR inverted input - $E9
 	!byte	%........
 	!byte	%....####
 	!byte	%.##.####
@@ -183,7 +188,7 @@
 	!byte	%......##
 	!byte	%......##
 
-; Left mid of OR
+; Left mid of OR - $EA
 	!byte	%......##
 	!byte	%......##
 	!byte	%......##
@@ -194,7 +199,7 @@
 	!byte	%......##
 
 
-; Bottom left OR
+; Bottom left OR - $EB
 	!byte	%......##
 	!byte	%......##
 	!byte	%.....##.
@@ -204,7 +209,7 @@
 	!byte	%....####
 	!byte	%........
 
-; Bottom left OR inverted input
+; Bottom left OR inverted input - $EC
 	!byte	%......##
 	!byte	%......##
 	!byte	%.##..##.
@@ -214,7 +219,7 @@
 	!byte	%....####
 	!byte	%........
 
-; Top mid of OR
+; Top mid of OR - $ED
 	!byte	%........
 	!byte	%#######.
 	!byte	%########
@@ -224,7 +229,7 @@
 	!byte	%........
 	!byte	%........
 
-; Bottom mid of OR
+; Bottom mid of OR - $EE
 	!byte	%........
 	!byte	%........
 	!byte	%........
@@ -234,7 +239,7 @@
 	!byte	%#######.
 	!byte	%........
 
-; Top right OR
+; Top right OR - $EF
 	!byte	%........
 	!byte	%........
 	!byte	%........
@@ -244,7 +249,7 @@
 	!byte	%#.......
 	!byte	%##......
 
-; Bottom right OR
+; Bottom right OR - $F0
 	!byte	%##......
 	!byte	%#.......
 	!byte	%#.......
@@ -254,7 +259,7 @@
 	!byte	%........
 	!byte	%........
 
-; Right mid of OR
+; Right mid of OR - $F1
 	!byte	%.#......
 	!byte	%.##.....
 	!byte	%..#.....
@@ -264,7 +269,7 @@
 	!byte	%.##.....
 	!byte	%.#......
 
-; Right mid of NOR
+; Right mid of NOR - $F2
 	!byte	%.#......
 	!byte	%.##.....
 	!byte	%..#..##.
@@ -275,7 +280,7 @@
 	!byte	%.#......
 
 ; ******************* XOR ******************************
-; Top left of XOR
+; Top left of XOR - $F3
 	!byte	%........
 	!byte	%....#..#
 	!byte	%....##.#
@@ -285,7 +290,7 @@
 	!byte	%......##
 	!byte	%......##
 
-; Top left of XOR inverted input
+; Top left of XOR inverted input - $F4
 	!byte	%........
 	!byte	%....#..#
 	!byte	%.##.##.#
@@ -295,7 +300,7 @@
 	!byte	%......##
 	!byte	%......##
 
-; Bottom left of XOR
+; Bottom left of XOR - $F5
 	!byte	%......##
 	!byte	%......##
 	!byte	%.....##.
@@ -305,7 +310,7 @@
 	!byte	%....#..#
 	!byte	%........
 
-; Bottom left of XOR inverted input
+; Bottom left of XOR inverted input - $F6
 	!byte	%......##
 	!byte	%......##
 	!byte	%.##..##.
@@ -315,7 +320,7 @@
 	!byte	%....#..#
 	!byte	%........
 
-; Top mid of XOR
+; Top mid of XOR - $F7
 	!byte	%........
 	!byte	%#######.
 	!byte	%########
@@ -325,7 +330,7 @@
 	!byte	%.##.....
 	!byte	%.##.....
 
-; Bottom mid of XOR
+; Bottom mid of XOR - $F8
 	!byte	%.##.....
 	!byte	%.##.....
 	!byte	%.#......
@@ -335,7 +340,7 @@
 	!byte	%#######.
 	!byte	%........
 
-; Mid of XOR
+; Mid of XOR - $F9
 	!byte	%.##.....
 	!byte	%.##.....
 	!byte	%.##.....
@@ -346,7 +351,7 @@
 	!byte	%.##.....
 
 ; ******************* NOT/BUFFER ******************************
-; Top of NOT
+; Top of NOT - $FA
 	!byte	%........
 	!byte	%........
 	!byte	%........
@@ -356,7 +361,7 @@
 	!byte	%....###.
 	!byte	%....####
 
-; Bottom of NOT
+; Bottom of NOT - $FB
 	!byte	%....####
 	!byte	%....###.
 	!byte	%....##..
@@ -366,7 +371,7 @@
 	!byte	%........
 	!byte	%........
 
-; Left of NOT
+; Left of NOT - $FC
 	!byte	%....##.#
 	!byte	%....##..
 	!byte	%....##..
@@ -376,7 +381,7 @@
 	!byte	%....##..
 	!byte	%....##.#
 
-; Left of NOT inverted input
+; Left of NOT inverted input - $FD
 	!byte	%....##.#
 	!byte	%....##..
 	!byte	%.##.##..
@@ -386,7 +391,7 @@
 	!byte	%....##..
 	!byte	%....##.#
 
-; Right of NOT
+; Right of NOT - $FE
 	!byte	%#.......
 	!byte	%##......
 	!byte	%.##..##.
@@ -396,7 +401,7 @@
 	!byte	%##......
 	!byte	%#.......
 
-; INPUT/BUTTOM
+; INPUT/BUTTOM - $FF
 	!byte	%...##...
 	!byte	%..####..
 	!byte	%.######.
