@@ -1,17 +1,26 @@
-The year is 2525. Human kind has
-destroyed the earths surface and
-scorched the sky, making it all but
-    uninhabitable
-You find your self in one of the
-last safe places. Together with the
-other survivors, you fight for
-    survival
-To rebuild society, electronics and
-computers will be necessary.
-You are the only person with a hint
-of knowledge of electronics and the
-task has been put to you.
-    create a CPU
-Your fellow survivors have found a
-bunch of old electronics, but it is
-op to you to make it work
+COLOR $C, 0
+2,   1, THE YEAR IS 2525. HUMAN KIND HAVE
+2,   2, SCORCHED THE SKY AND DESTROYED THE
+2,   3, EARTHS SURFACE, MAKING IT ALL BUT
+COLOR $B, 0
+14,  5, UNINHABITABLE
+COLOR $C, 0
+3,   7, YOU FIND YOUR SELF IN ONE OF THE
+2,   8, LAST LIVABLE PLACES. TOGETHER WITH
+2,   9, OTHER SURVIVORS, YOU FIGHT FOR YOUR
+COLOR $B, 0
+15, 11, EXISTENCE
+COLOR $C, 0
+2,  13, TO REBUILD SOCIETY, ELECTRONICS AND
+4,  14, COMPUTERS WILL BE NECESSARY.
+2,  15, YOU ALONE HAVE THE ABILITY TO SAVE
+4,  17, SOCIETY BY DESIGNING A CPU AND
+4,  18, ENABLE A NEW BEGINNING FOR THE
+13, 19, DIGITAL AGE.
+2,  21, YOUR FELLOW SURVIVORS HAVE FOUND A
+2,  22,	STOCK OF OLD, BUT SEEMINGLY WORKING
+11, 23, ELECTRONIC PARTS.
+1,  25, YOUR TASK IS TO IDENTIFY THE FUNCTION
+2,  26, OF THE DIFFERENT COMPONENTS AND USE
+2,  27, THEM TO BUILD THE NEW WORLDS FIRST
+7,  28, CENTRAL PROCESSING UNIT
