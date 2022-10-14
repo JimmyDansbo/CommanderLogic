@@ -11,11 +11,14 @@ font_name_end:
 histbg_name:
 	!text "HISTBG.BIN"
 histbg_name_end:
-histbg_pal:
+histbg_palette:
 	!word $0100,$0210,$0211,$0410,$0510,$0710,$0321,$0C20
 	!word $0532,$0732,$0A21,$0E41,$0E71,$0C95,$0FB1,$0FE2
 
 
+;******************************************************************************
+; Use PETSCII codes to set foreground and background color
+;******************************************************************************
 !macro SET_COLOR .fg, .bg {
 	lda #.bg
 	jsr CHROUT
@@ -26,10 +29,46 @@ histbg_pal:
 }
 
 ;******************************************************************************
+; Load a binary file directly into VRAM.
+; If address is not specified as parameter, it must be present in header of file
+;******************************************************************************
+; .name_start:	The label at the start of the filename
+; .name_end:	The label at the end of the filename (used for computing length)
+; .bank:		Load to Bank 0 or 1 in VRAM
+; [.addr]:		Optional address to load file to
+;******************************************************************************
+!macro VLOAD .name_start, .name_end, .bank {
+	lda	#1							; Logical file number (must be unique)
+	ldx	#8							; Device number (8 local filesystem)
+	ldy	#1							; Secondary command 1 = use addr in file
+	jsr	SETLFS
+	lda	#(.name_end-.name_start)	; Length of filename
+	ldx	#<.name_start				; Address of filename
+	ldy	#>.name_start
+	jsr	SETNAM
+	lda	#.bank+2					; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	jsr	LOAD
+}
+!macro VLOAD .name_start, .name_end, .bank, .addr {
+	lda	#1							; Logical file number (must be unique)
+	ldx	#8							; Device number (8 local filesystem)
+	ldy	#0							; Secondary command 0 = use addr provided to LOAD
+	jsr	SETLFS
+	lda	#(.name_end-.name_start)	; Length of filename
+	ldx	#<.name_start				; Address of filename
+	ldy	#>.name_start
+	jsr	SETNAM
+	lda	#.bank+2					; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	ldx #<.addr
+	ldy #>.addr
+	jsr	LOAD
+}
+
+;******************************************************************************
 ; Entry point of the program
 ;******************************************************************************
 main:
-	jsr	load_font
+	+VLOAD font_name, font_name_end, 1
 
 	+SET_COLOR PET_WHITE, PET_BLACK
 	lda #SCR_MOD_40x30
@@ -43,53 +82,26 @@ main:
 ; Load image into video RAM, set palette and set layer0 to display it
 ;******************************************************************************
 load_img:
-	lda	#1								; Logical file number (must be unique)
-	ldx	#8								; Device number (8 local filesystem)
-	ldy	#1								; Secondary command 1 = use addr in file
-	jsr	SETLFS
-	lda	#(histbg_name_end-histbg_name)	; Length of filename
-	ldx	#<histbg_name					; Address of filename
-	ldy	#>histbg_name
-	jsr	SETNAM
-	lda	#2								; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	jsr	LOAD
+	+VLOAD histbg_name, histbg_name_end, 0
 
-	; Overwrite palette starting at offset 16
+	; Overwrite palette starting at offset 16, but do it backwards for ease of
+	; checking the number of bytes written.
 	+VERA_SET_ADDR $1FA3F, -1
 	ldx #31
--	lda	histbg_pal, X
+-	lda	histbg_palette, X
 	sta VERA_DATA0
 	dex
 	bne -
 
 	; Display the image that has just been loaded to VRAM
-	lda #%00000110						; Configure bitmap with 4bit color depth
+	lda #%00000110				; Configure bitmap width & 4bit colordepth
 	sta VERA_L0_CONFIG
 
-	lda #$00							; BMP start=$0000, Width=320
+	lda #$00					; BMP start=$0000, Width=320
 	sta VERA_L0_TILEBASE
 
-	lda #$01							; Set palette offset
+	lda #$01					; Set palette offset
 	sta VERA_L0_HSCROLL_H
 
-	lda #$10							; Enable Layer 0
-	ora VERA_DC_VIDEO
-	sta VERA_DC_VIDEO
-	rts
-	
-;******************************************************************************
-; Load partial font directly in to VRAM
-; Uses font_name and font_name_end
-;******************************************************************************
-load_font:
-	lda	#1							; Logical file number (must be unique)
-	ldx	#8							; Device number (8 local filesystem)
-	ldy	#1							; Secondary command 1 = use addr in file
-	jsr	SETLFS
-	lda	#(font_name_end-font_name)	; Length of filename
-	ldx	#<font_name					; Address of filename
-	ldy	#>font_name
-	jsr	SETNAM
-	lda	#3							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	jsr	LOAD
+	+VERA_SET_L0 1				; Enable layer 0
 	rts
