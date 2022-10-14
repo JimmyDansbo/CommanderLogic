@@ -1,0 +1,17 @@
+The year is 2525. Human kind has
+destroyed the earths surface and
+scorched the sky, making it all but
+    uninhabitable
+You find your self in one of the
+last safe places. Together with the
+other survivors, you fight for
+    survival
+To rebuild society, electronics and
+computers will be necessary.
+You are the only person with a hint
+of knowledge of electronics and the
+task has been put to you.
+    create a CPU
+Your fellow survivors have found a
+bunch of old electronics, but it is
+op to you to make it work
