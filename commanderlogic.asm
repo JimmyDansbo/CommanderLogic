@@ -5,6 +5,18 @@
 !src "vera0.9.inc"
 	jmp	main
 
+ZSTART=$8000
+ZSTOP=$8003
+ZSET_CALLBACK=$8006
+ZCLEAR_CALLBACK=$8009
+ZSET_MUSIC_SPEED=$800C
+
+zsbg_name:
+	!text "ZSBG.BIN"
+zsbg_name_end:
+hist_music:
+	!text "HISTMUSIC.ZSM"
+hist_music_end:
 font_name:
 	!text "PARTFONT.BIN"
 font_name_end:
@@ -154,11 +166,60 @@ main:
 	+INSTALL_INT_HANDLER my_int_routine
 
 	+VLOAD font_name, font_name_end, 1
+
+	jsr load_player
+	jsr load_song
+	lda #2
+	jsr ZSTART
 	jsr show_intro
+
+	jsr CHRIN
+	ldx #<wait_for_end
+	ldy #>wait_for_end
+	jsr ZSET_CALLBACK
+-	wai
+	lda mahh
+	bne -
+	jsr ZCLEAR_CALLBACK
 
 	+RESTORE_INT_VECTOR old_int
 	jsr CHRIN
 
+	rts
+mahh !byte 1
+wait_for_end:
+	jsr ZSTOP
+	stz mahh
+	rts
+
+load_song:
+	lda	#1							; Logical file number (must be unique)
+	ldx	#8							; Device number (8 local filesystem)
+	ldy	#2							; Secondary command 2 = headerless load
+	jsr	SETLFS
+	lda	#(hist_music_end-hist_music)	; Length of filename
+	ldx	#<hist_music					; Address of filename
+	ldy	#>hist_music
+	jsr	SETNAM
+	lda #2
+	sta RAM_BANK
+	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	ldx #<RAM_BANK_START
+	ldy #>RAM_BANK_START
+	jsr	LOAD
+	rts
+
+load_player:
+	lda	#1							; Logical file number (must be unique)
+	ldx	#8							; Device number (8 local filesystem)
+	ldy	#1							; Secondary command 1 = use addr in header of file
+	jsr	SETLFS
+	lda	#(zsbg_name_end-zsbg_name)	; Length of filename
+	ldx	#<zsbg_name					; Address of filename
+	ldy	#>zsbg_name
+	jsr	SETNAM
+	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	jsr	LOAD
 	rts
 
 my_int_routine:
