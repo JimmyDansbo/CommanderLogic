@@ -156,7 +156,8 @@ main:
 	+VLOAD font_name, font_name_end, 1
 	jsr show_intro
 
-	bra *
+	+RESTORE_INT_VECTOR old_int
+	jsr CHRIN
 
 	rts
 
