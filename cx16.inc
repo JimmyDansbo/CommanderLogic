@@ -361,6 +361,20 @@ JSRFAR				= $FF6E
 	lda	IRQVECTOR+1
 	sta	.old_handler+1
 }
+; *****************************************************************************
+; Restore the original interrupt handler
+; *****************************************************************************
+; INPUTS:	.old_handler = memory location holding address of old handler
+; USES:		A
+; *****************************************************************************
+!macro RESTORE_INT_VECTOR .old_handler {
+	sei
+	lda	.old_handler
+	sta	IRQVECTOR
+	lda	.old_handler+1
+	sta	IRQVECTOR+1
+	cli
+}
 
 ; *****************************************************************************
 ; Install new interrupt handler
