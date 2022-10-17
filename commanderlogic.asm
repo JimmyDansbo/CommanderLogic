@@ -19,62 +19,22 @@ histbg_palette:
 	!word $0100,$0210,$0211,$0410,$0510,$0710,$0321,$0C20
 	!word $0532,$0732,$0A21,$0E41,$0E71,$0C95,$0FB1,$0FE2
 
-hist_ln0:
-	!text PET_MIDGRAY,"THE YEAR IS 2525. HUMANKIND HAS",0
-hist_ln1:
-	!text "SCORCHED THE SKY AND DESTROYED THE",0
-hist_ln2:
-	!text "EARTHS SURFACE, MAKING IT ALL BUT",0
-hist_ln3:
-	!text PET_WHITE, "UNINHABITABLE",0
-hist_ln4:
-	!text PET_MIDGRAY,"YOU FIND YOURSELF IN ONE OF THE",0
-hist_ln5:
-	!text "LAST LIVEABLE PLACES. TOGETHER WITH",0
-hist_ln6:
-	!text "OTHER SURVIVORS, YOU FIGHT FOR YOUR",0
-hist_ln7:
-	!text PET_DARKGRAY,"EXISTENCE",0
-hist_ln8:
-	!text PET_WHITE,"TO REBUILD SOCIETY, ELECTRONICS AND",0
-hist_ln9:
-	!text "COMPUTERS WILL BE NECESSARY.",0
-hist_ln10:
-	!text "YOU ALONE HAVE THE ABILITY TO SAVE",0
-hist_ln11:
-	!text "SOCIETY BY DESIGNING A CPU AND",0
-hist_ln12:
-	!text "ENABLE A NEW BEGINNING FOR THE",0
-hist_ln13:
-	!text "DIGITAL AGE.",0
-hist_ln14:
-	!text "YOUR FELLOW SURVIVORS HAVE FOUND A",0
-hist_ln15:
-	!text "STOCK OF OLD, BUT SEEMINGLY WORKING",0
-hist_ln16:
-	!text "ELECTRONIC PARTS.",0
-hist_ln17:
-	!text "YOUR TASK:  IDENTIFY THE FUNCTION",0
-hist_ln18:
-	!text "OF THE DIFFERENT COMPONENTS AND USE",0
-hist_ln19:
-	!text "THEM TO BUILD THE NEW WORLDS FIRST",0
-hist_ln20:
-	!text "CENTRAL PROCESSING UNIT",0
-old_int:
-	!word $0000
+old_int:!word $0000
+
+delay_preset=1
+color_delay_preset=70
+
 delay_counter:
 	!byte 0
-delay_preset=1
+
 color_delay_cnt:
 	!byte 0
 color_change:
 	!byte 0
-color_delay_preset=70
-colors:
-	!byte $01,$0F,$07,$02,$0B,$08,$09,$00
 cur_col:
 	!byte 0
+colors:
+	!byte WHITE,LIGHTGRAY,YELLOW,RED,DARKGRAY,ORANGE,BROWN,0
 
 
 ;******************************************************************************
@@ -170,30 +130,35 @@ show_intro:
 	lda	#SCR_MOD_40x30
 	jsr	Screen_set_mode
 	jsr	show_img
-	+WRITE_XY 3, 1, hist_ln0
-	+WRITE_XY 2, 2, hist_ln1
-	+WRITE_XY 2, 3, hist_ln2
-	+WRITE_XY 14, 5, hist_ln3
+	+SET_COLOR PET_MIDGRAY
+	+WRITE_XY 3, 1,   "THE YEAR IS 2525. HUMANKIND HAS"
+	+WRITE_XY 2, 2,   "SCORCHED THE SKY AND DESTROYED THE"
+	+WRITE_XY 2, 3,   "EARTHS SURFACE, MAKING IT ALL BUT"
+	+SET_COLOR PET_WHITE
+	+WRITE_XY 14, 5,  "UNINHABITABLE"
 	lda	#color_delay_preset
 	sta	color_delay_cnt
 	sta	color_change
-	+WRITE_XY 3, 7, hist_ln4
-	+WRITE_XY 2, 8, hist_ln5
-	+WRITE_XY 2, 9, hist_ln6
-	+WRITE_XY 15, 11, hist_ln7
-	+WRITE_XY 2, 13, hist_ln8
-	+WRITE_XY 4, 14, hist_ln9
-	+WRITE_XY 2, 16, hist_ln10
-	+WRITE_XY 4, 17, hist_ln11
-	+WRITE_XY 4, 18, hist_ln12
-	+WRITE_XY 13, 19, hist_ln13
-	+WRITE_XY 2, 21, hist_ln14
-	+WRITE_XY 2, 22, hist_ln15
-	+WRITE_XY 11, 23, hist_ln16
-	+WRITE_XY 3, 25, hist_ln17
-	+WRITE_XY 2, 26, hist_ln18
-	+WRITE_XY 2, 27, hist_ln19
-	+WRITE_XY 7, 28, hist_ln20
+	+SET_COLOR PET_MIDGRAY
+	+WRITE_XY 3, 7,   "YOU FIND YOURSELF IN ONE OF THE"
+	+WRITE_XY 2, 8,   "LAST LIVEABLE PLACES. TOGETHER WITH"
+	+WRITE_XY 2, 9,   "OTHER SURVIVORS, YOU FIGHT FOR YOUR"
+	+SET_COLOR PET_DARKGRAY
+	+WRITE_XY 15, 11, "EXISTENCE"
+	+SET_COLOR PET_WHITE
+	+WRITE_XY 2, 13,  "TO REBUILD SOCIETY, ELECTRONICS AND"
+	+WRITE_XY 4, 14,  "COMPUTERS WILL BE NECESSARY."
+	+WRITE_XY 2, 16,  "YOU ALONE HAVE THE ABILITY TO SAVE"
+	+WRITE_XY 4, 17,  "SOCIETY BY DESIGNING A CPU AND"
+	+WRITE_XY 4, 18,  "ENABLE A NEW BEGINNING FOR THE"
+	+WRITE_XY 13, 19, "DIGITAL AGE."
+	+WRITE_XY 2, 21,  "YOUR FELLOW SURVIVORS HAVE FOUND A"
+	+WRITE_XY 2, 22,  "STOCK OF OLD, BUT SEEMINGLY WORKING"
+	+WRITE_XY 11, 23, "ELECTRONIC PARTS."
+	+WRITE_XY 3, 25,  "YOUR TASK:  IDENTIFY THE FUNCTION"
+	+WRITE_XY 2, 26,  "OF THE DIFFERENT COMPONENTS AND USE"
+	+WRITE_XY 2, 27,  "THEM TO BUILD THE NEW WORLDS FIRST"
+	+WRITE_XY 7, 28,  "CENTRAL PROCESSING UNIT"
 	rts
 
 ;******************************************************************************

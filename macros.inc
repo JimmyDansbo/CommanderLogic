@@ -131,28 +131,32 @@ MACROS_INC=1
 ;******************************************************************************
 ; .xc:		X coordinate
 ; .yc:		Y coordinate
-; .str:		Address of string to write
+; .str:		String to to write
 ; [.nodelay]:	If set, the string is just printed without any delay between chars
 ;******************************************************************************
 !macro WRITE_XY .xc, .yc, .str, .nodelay {
-	ldx #.yc
-	ldy #.xc
-	jsr PLOT
-	lda #<.str
-	sta TMP_PTR0
-	lda #>.str
-	sta TMP_PTR0+1
-	jsr print_str
+	bra	+
+.locstr:!text	.str,0
++	ldx	#.yc
+	ldy	#.xc
+	jsr	PLOT
+	lda	#<.locstr
+	sta	TMP_PTR0
+	lda	#>.locstr
+	sta	TMP_PTR0+1
+	jsr	print_str
 }
 !macro WRITE_XY .xc, .yc, .str {
-	ldx #.yc
-	ldy #.xc
-	jsr PLOT
-	lda #<.str
-	sta TMP_PTR0
-	lda #>.str
-	sta TMP_PTR0+1
-	jsr print_delayed_str
+	bra	+
+.locstr:!text	.str,0
++	ldx	#.yc
+	ldy	#.xc
+	jsr	PLOT
+	lda	#<.locstr
+	sta	TMP_PTR0
+	lda	#>.locstr
+	sta	TMP_PTR0+1
+	jsr	print_delayed_str
 }
 
 ;******************************************************************************
