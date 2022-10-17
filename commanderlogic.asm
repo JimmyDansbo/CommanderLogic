@@ -3,19 +3,22 @@
 !src "cx16.inc"
 +SYS_LINE
 !src "vera0.9.inc"
+!src "macros.inc"
+
 	jmp	main
 
-ZSTART=$8000
-ZSTOP=$8003
-ZSET_CALLBACK=$8006
-ZCLEAR_CALLBACK=$8009
-ZFORCE_LOOP=$800C
-ZDISABLE_LOOP=$800F
-ZSET_MUSIC_SPEED=$8012
+ZSTART			= $8000
+ZSTOP			= $8003
+ZSET_CALLBACK		= $8006
+ZCLEAR_CALLBACK		= $8009
+ZFORCE_LOOP		= $800C
+ZDISABLE_LOOP		= $800F
+ZSET_MUSIC_SPEED	= $8012
 
 histbg_palette:
 	!word $0100,$0210,$0211,$0410,$0510,$0710,$0321,$0C20
 	!word $0532,$0732,$0A21,$0E41,$0E71,$0C95,$0FB1,$0FE2
+
 hist_ln0:
 	!text PET_MIDGRAY,"THE YEAR IS 2525. HUMANKIND HAS",0
 hist_ln1:
@@ -73,151 +76,6 @@ colors:
 cur_col:
 	!byte 0
 
-;******************************************************************************
-; Use PETSCII codes to set foreground and background color
-;******************************************************************************
-!macro SET_COLOR .fg, .bg {
-	lda #.bg
-	jsr CHROUT
-	lda #PET_SWAP_FGBG
-	jsr CHROUT
-	lda #.fg
-	jsr CHROUT
-}
-
-;******************************************************************************
-; Load a binary file directly into VRAM.
-; If address is not specified as parameter, it must be present in header of file
-;******************************************************************************
-; .name_start:	The label at the start of the filename
-; .name_end:	The label at the end of the filename (used for computing length)
-; .bank:		Load to Bank 0 or 1 in VRAM
-; [.addr]:		Optional address to load file to
-;******************************************************************************
-!macro VLOAD .name, .bank {
-	bra +
-.locname:
-	!text .name
-.len=*-.locname
-+	lda	#1							; Logical file number (must be unique)
-	ldx	#8							; Device number (8 local filesystem)
-	ldy	#1							; Secondary command 1 = use addr in file
-	jsr	SETLFS
-	lda	#.len						; Length of filename
-	ldx	#<.locname					; Address of filename
-	ldy	#>.locname
-	jsr	SETNAM
-	lda	#.bank+2					; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	jsr	LOAD
-}
-!macro VLOAD .name, .bank, .addr {
-	bra +
-.locname:
-	!text .name
-.len=*-.locname
-+	lda	#1							; Logical file number (must be unique)
-	ldx	#8							; Device number (8 local filesystem)
-	ldy	#0							; Secondary command 0 = use addr provided to LOAD
-	jsr	SETLFS
-	lda	#.len						; Length of filename
-	ldx	#<.locname					; Address of filename
-	ldy	#>.locname
-	jsr	SETNAM
-	lda	#.bank+2					; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	ldx #<.addr
-	ldy #>.addr
-	jsr	LOAD
-}
-!macro SLOAD .name {
-	bra +
-.locname:
-	!text .name
-.len=*-.locname
-+	lda	#1							; Logical file number (must be unique)
-	ldx	#8							; Device number (8 local filesystem)
-	ldy	#1							; Secondary command 1 = use addr in header of file
-	jsr	SETLFS
-	lda	#.len						; Length of filename
-	ldx	#<.locname					; Address of filename
-	ldy	#>.locname
-	jsr	SETNAM
-	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	jsr	LOAD
-}
-!macro SLOAD .name, .addr_header {
-	bra +
-.locname:
-	!text .name
-.len=*-.locname
-+	lda	#1							; Logical file number (must be unique)
-	ldx	#8							; Device number (8 local filesystem)
-	!if .addr_header < 2 {
-		ldy #2						; Secondary command 2 = headerless load
-	} else {
-		ldy	#0						; Secondary command 0 = use addr provided to LOAD
-	}
-	jsr	SETLFS
-	lda	#.len						; Length of filename
-	ldx	#<.locname					; Address of filename
-	ldy	#>.locname
-	jsr	SETNAM
-	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	!if .addr_header > 2 {
-		ldx #<.addr_header
-		ldy #>.addr_header
-	}
-	jsr	LOAD
-}
-!macro SLOAD .name, .addr, .headerless {
-	bra +
-.locname:
-	!text .name
-.len=*-.locname
-+	lda	#1							; Logical file number (must be unique)
-	ldx	#8							; Device number (8 local filesystem)
-	ldy	#2							; Secondary command 2 = headerless load
-	jsr	SETLFS
-	lda	#.len						; Length of filename
-	ldx	#<.locname					; Address of filename
-	ldy	#>.locname
-	jsr	SETNAM
-	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	ldx #<.addr
-	ldy #>.addr
-	jsr	LOAD
-}
-
-;******************************************************************************
-; Write a string at specified coordinates using kernal functions
-;******************************************************************************
-!macro WRITE_XY .xc, .yc, .str, .nodelay {
-	ldx #.yc
-	ldy #.xc
-	jsr PLOT
-	lda #<.str
-	sta TMP_PTR0
-	lda #>.str
-	sta TMP_PTR0+1
-	jsr print_str
-}
-;******************************************************************************
-; Write a string at specified coordinates using kernal functions
-;******************************************************************************
-!macro WRITE_XY .xc, .yc, .str {
-	ldx #.yc
-	ldy #.xc
-	jsr PLOT
-	lda #<.str
-	sta TMP_PTR0
-	lda #>.str
-	sta TMP_PTR0+1
-	jsr print_delayed_str
-}
-
-!macro SET_RAM_BANK .bank {
-	lda #.bank
-	sta RAM_BANK
-}
 
 ;******************************************************************************
 ; Entry point of the program
