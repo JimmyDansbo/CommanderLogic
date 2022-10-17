@@ -93,93 +93,90 @@ main:
 	+SET_RAM_BANK 3
 	+SLOAD "GLOOMY.ZSM", RAM_BANK_START, 1
 
-	lda #2
-	jsr ZSTART
-	jsr show_intro
+	+SET_RAM_BANK 2
+	jsr	ZSTART
+	jsr	show_intro
 
-	jsr CHRIN
-	jsr ZDISABLE_LOOP
-	ldx #<wait_for_end
-	ldy #>wait_for_end
-	jsr ZSET_CALLBACK
+	jsr	CHRIN
+	jsr	ZDISABLE_LOOP
+	ldx	#<wait_for_end
+	ldy	#>wait_for_end
+	jsr	ZSET_CALLBACK
 
-	jsr CHRIN
+	jsr	CHRIN
 
 	+RESTORE_INT_VECTOR old_int
-	jsr CHRIN
+	jsr	CHRIN
 
 	rts
 
 wait_for_end:
-	jsr ZSTOP
-	lda #3
-	jsr ZSTART
+	jsr	ZSTOP
+	+SET_RAM_BANK 3
+	jsr	ZSTART
 	rts
 	
 my_int_routine:
-	lda VERA_ISR
-	and #$01
-	beq @end
+	lda	VERA_ISR
+	and	#$01
+	beq	@end
 
-	lda delay_counter
-	beq +
-	dec delay_counter
+	lda	delay_counter
+	beq	+
+	dec	delay_counter
 
-+	lda color_change
-	beq @end
++	lda	color_change
+	beq	@end
 
-	lda color_delay_cnt
-	beq +
-	dec color_delay_cnt
-	bra @end
-+	jsr change_color
-	lda #color_delay_preset
-	sta color_delay_cnt
-
-@end:
-	lda #$01
-	sta VERA_ISR
-	jmp (old_int)
+	lda	color_delay_cnt
+	beq	+
+	dec	color_delay_cnt
+	bra	@end
++	jsr	change_color
+	lda	#color_delay_preset
+	sta	color_delay_cnt
+@end:	lda	#$01
+	sta	VERA_ISR
+	jmp	(old_int)
 
 change_color:
-	lda VERA_CTRL
-	ora #$01
-	sta VERA_CTRL
-	lda #$21
-	sta VERA_ADDR_H
+	lda	VERA_CTRL
+	ora	#$01
+	sta	VERA_CTRL
+	lda	#$21
+	sta	VERA_ADDR_H
 	+VERA_GOXY 14, 5
-	inc VERA_ADDR_L
-	inc cur_col
-	ldx cur_col
-	lda colors, x
-	bne +
-	stz color_change
-	bra @end
-+	ldx #13
--	sta VERA_DATA1
+	inc	VERA_ADDR_L
+	inc	cur_col
+	ldx	cur_col
+	lda	colors, x
+	bne	+
+	stz	color_change
+	bra	@end
++	ldx	#13
+-	sta	VERA_DATA1
 	dex
-	bne -
-@end:
-	lda VERA_CTRL
-	and #$FE
-	sta VERA_CTRL
+	bne	-
+@end:	lda	VERA_CTRL
+	and	#$FE
+	sta	VERA_CTRL
 	rts
 
 ;******************************************************************************
-; Load the background image and show the intro screen with the game story
+; Show the background image and the intro screen with the game story
 ;******************************************************************************
 show_intro:
 	+SET_COLOR PET_WHITE, PET_BLACK
-	lda #SCR_MOD_40x30
-	jsr Screen_set_mode
-	jsr load_img
+	lda	#SCR_MOD_40x30
+	jsr	Screen_set_mode
+	jsr	show_img
 	+WRITE_XY 3, 1, hist_ln0
 	+WRITE_XY 2, 2, hist_ln1
 	+WRITE_XY 2, 3, hist_ln2
 	+WRITE_XY 14, 5, hist_ln3
-	lda #color_delay_preset
-	sta color_delay_cnt
-	sta color_change
+	lda	#color_delay_preset
+	sta	color_delay_cnt
+	sta	color_change
 	+WRITE_XY 3, 7, hist_ln4
 	+WRITE_XY 2, 8, hist_ln5
 	+WRITE_XY 2, 9, hist_ln6
@@ -205,58 +202,53 @@ show_intro:
 ; TMP_PTR0 must point to the beginning of the zero-terminated string
 ;******************************************************************************
 print_delayed_str:
-    ldy #0
-@loop:
-	lda (TMP_PTR0), y
+	ldy	#0
+@loop:	lda	(TMP_PTR0), y
 	beq	@end
-	jsr CHROUT
--	lda delay_counter
-	bne -
-	lda #delay_preset
-	sta delay_counter
+	jsr	CHROUT
+-	lda	delay_counter
+	bne	-
+	lda	#delay_preset
+	sta	delay_counter
 	iny
-	bra @loop
-@end:
-	rts
+	bra	@loop
+@end:	rts
 
 ;******************************************************************************
 ; Print at string to screen using kernal function
 ; TMP_PTR0 must point to the beginning of the zero-terminated string
 ;******************************************************************************
 print_str:
-    ldy #0
-@loop:
-	lda (TMP_PTR0), y
+	ldy	#0
+@loop:	lda	(TMP_PTR0), y
 	beq	@end
-	jsr CHROUT
+	jsr	CHROUT
 	iny
-	bra @loop
-@end:
-	rts
+	bra	@loop
+@end:	rts
 
 ;******************************************************************************
-; Load image into video RAM, set palette and set layer0 to display it
+; Set palette and set layer0 to display it background image
 ;******************************************************************************
-load_img:
-
+show_img:
 	; Overwrite palette starting at offset 16, but do it backwards for ease of
 	; checking the number of bytes written.
 	+VERA_SET_ADDR $1FA3F, -1
-	ldx #31
+	ldx	#31
 -	lda	histbg_palette, X
-	sta VERA_DATA0
+	sta	VERA_DATA0
 	dex
-	bne -
+	bne	-
 
 	; Display the image that has just been loaded to VRAM
-	lda #%00000110				; Configure bitmap width & 4bit colordepth
-	sta VERA_L0_CONFIG
+	lda	#%00000110	; Configure bitmap width & 4bit colordepth
+	sta	VERA_L0_CONFIG
 
-	lda #$00					; BMP start=$0000, Width=320
-	sta VERA_L0_TILEBASE
+	lda	#$00		; BMP start=$0000, Width=320
+	sta	VERA_L0_TILEBASE
 
-	lda #$01					; Set palette offset
-	sta VERA_L0_HSCROLL_H
+	lda	#$01		; Set palette offset
+	sta	VERA_L0_HSCROLL_H
 
-	+VERA_SET_L0 1				; Enable layer 0
+	+VERA_SET_L0 1		; Enable layer 0
 	rts
