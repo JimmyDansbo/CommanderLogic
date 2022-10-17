@@ -55,9 +55,7 @@ main:
 	+SET_RAM_BANK 2
 	+SLOAD "HISTMUSIC.ZSM", RAM_BANK_START, HEADERLESS
 	+SET_RAM_BANK 3
-	+SLOAD "GLOOMY.ZSM", RAM_BANK_START, HEADERLESS
-	+SET_RAM_BANK 4
-	+SLOAD "UPBEAT.ZSM", RAM_BANK_START, HEADERLESS
+	+SLOAD "GAMEMUSIC.ZSM", RAM_BANK_START, HEADERLESS
 
 	+SET_RAM_BANK 2
 	jsr	ZSTART
@@ -74,41 +72,12 @@ main:
 	jsr	CHRIN
 
 	rts
-mahh	!byte	0
+
 wait_for_end:
-	inc	mahh
-	lda	mahh
-	cmp	#1
-	bne	+
 	jsr	ZSTOP
 	+SET_RAM_BANK 3
 	jsr	ZSTART
-	ldx	#<wait_for_end
-	ldy	#>wait_for_end
-	jsr	ZSET_CALLBACK
 	rts
-+	cmp	#4
-	bne	+
-	jsr	ZSTOP
-	+SET_RAM_BANK 4
-	jsr	ZSTART
-	ldx	#<wait_for_end
-	ldy	#>wait_for_end
-	jsr	ZSET_CALLBACK
-	rts
-+	cmp	#7
-	bne	+
-	jsr	ZSTOP
-	+SET_RAM_BANK 2
-	jsr	ZSTART
-	ldx	#<wait_for_end
-	ldy	#>wait_for_end
-	jsr	ZSET_CALLBACK
-	rts
-+	cmp	#8
-	bne	+
-	stz	mahh
-+	rts
 
 my_int_routine:
 	lda	VERA_ISR
