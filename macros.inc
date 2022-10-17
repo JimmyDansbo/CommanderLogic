@@ -159,6 +159,28 @@ MACROS_INC=1
 	jsr	print_delayed_str
 }
 
+!macro WRITE .str {
+	bra	+
+.locstr:!text .str,0
++	lda	#<.locstr
+	sta	TMP_PTR0
+	lda	#>.locstr
+	sta	TMP_PTR0+1
+	jsr	print_str
+}
+!macro WRITE .str, .chr {
+	bra	+
+.locstr:!text .str,0
++	lda	#<.locstr
+	sta	TMP_PTR0
+	lda	#>.locstr
+	sta	TMP_PTR0+1
+	jsr	print_str
+	lda	#.chr
+	jsr	CHROUT
+}
+
+
 ;******************************************************************************
 ; Set the RAM bank
 ;******************************************************************************
