@@ -9,20 +9,10 @@ ZSTART=$8000
 ZSTOP=$8003
 ZSET_CALLBACK=$8006
 ZCLEAR_CALLBACK=$8009
-ZSET_MUSIC_SPEED=$800C
+ZFORCE_LOOP=$800C
+ZDISABLE_LOOP=$800F
+ZSET_MUSIC_SPEED=$8012
 
-zsbg_name:
-	!text "ZSBG.BIN"
-zsbg_name_end:
-hist_music:
-	!text "HISTMUSIC.ZSM"
-hist_music_end:
-font_name:
-	!text "PARTFONT.BIN"
-font_name_end:
-histbg_name:
-	!text "HISTBG.BIN"
-histbg_name_end:
 histbg_palette:
 	!word $0100,$0210,$0211,$0410,$0510,$0710,$0321,$0C20
 	!word $0532,$0732,$0A21,$0E41,$0E71,$0C95,$0FB1,$0FE2
@@ -104,28 +94,94 @@ cur_col:
 ; .bank:		Load to Bank 0 or 1 in VRAM
 ; [.addr]:		Optional address to load file to
 ;******************************************************************************
-!macro VLOAD .name_start, .name_end, .bank {
-	lda	#1							; Logical file number (must be unique)
+!macro VLOAD .name, .bank {
+	bra +
+.locname:
+	!text .name
+.len=*-.locname
++	lda	#1							; Logical file number (must be unique)
 	ldx	#8							; Device number (8 local filesystem)
 	ldy	#1							; Secondary command 1 = use addr in file
 	jsr	SETLFS
-	lda	#(.name_end-.name_start)	; Length of filename
-	ldx	#<.name_start				; Address of filename
-	ldy	#>.name_start
+	lda	#.len						; Length of filename
+	ldx	#<.locname					; Address of filename
+	ldy	#>.locname
 	jsr	SETNAM
 	lda	#.bank+2					; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
 	jsr	LOAD
 }
-!macro VLOAD .name_start, .name_end, .bank, .addr {
-	lda	#1							; Logical file number (must be unique)
+!macro VLOAD .name, .bank, .addr {
+	bra +
+.locname:
+	!text .name
+.len=*-.locname
++	lda	#1							; Logical file number (must be unique)
 	ldx	#8							; Device number (8 local filesystem)
 	ldy	#0							; Secondary command 0 = use addr provided to LOAD
 	jsr	SETLFS
-	lda	#(.name_end-.name_start)	; Length of filename
-	ldx	#<.name_start				; Address of filename
-	ldy	#>.name_start
+	lda	#.len						; Length of filename
+	ldx	#<.locname					; Address of filename
+	ldy	#>.locname
 	jsr	SETNAM
 	lda	#.bank+2					; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	ldx #<.addr
+	ldy #>.addr
+	jsr	LOAD
+}
+!macro SLOAD .name {
+	bra +
+.locname:
+	!text .name
+.len=*-.locname
++	lda	#1							; Logical file number (must be unique)
+	ldx	#8							; Device number (8 local filesystem)
+	ldy	#1							; Secondary command 1 = use addr in header of file
+	jsr	SETLFS
+	lda	#.len						; Length of filename
+	ldx	#<.locname					; Address of filename
+	ldy	#>.locname
+	jsr	SETNAM
+	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	jsr	LOAD
+}
+!macro SLOAD .name, .addr_header {
+	bra +
+.locname:
+	!text .name
+.len=*-.locname
++	lda	#1							; Logical file number (must be unique)
+	ldx	#8							; Device number (8 local filesystem)
+	!if .addr_header < 2 {
+		ldy #2						; Secondary command 2 = headerless load
+	} else {
+		ldy	#0						; Secondary command 0 = use addr provided to LOAD
+	}
+	jsr	SETLFS
+	lda	#.len						; Length of filename
+	ldx	#<.locname					; Address of filename
+	ldy	#>.locname
+	jsr	SETNAM
+	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	!if .addr_header > 2 {
+		ldx #<.addr_header
+		ldy #>.addr_header
+	}
+	jsr	LOAD
+}
+!macro SLOAD .name, .addr, .headerless {
+	bra +
+.locname:
+	!text .name
+.len=*-.locname
++	lda	#1							; Logical file number (must be unique)
+	ldx	#8							; Device number (8 local filesystem)
+	ldy	#2							; Secondary command 2 = headerless load
+	jsr	SETLFS
+	lda	#.len						; Length of filename
+	ldx	#<.locname					; Address of filename
+	ldy	#>.locname
+	jsr	SETNAM
+	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
 	ldx #<.addr
 	ldy #>.addr
 	jsr	LOAD
@@ -158,6 +214,11 @@ cur_col:
 	jsr print_delayed_str
 }
 
+!macro SET_RAM_BANK .bank {
+	lda #.bank
+	sta RAM_BANK
+}
+
 ;******************************************************************************
 ; Entry point of the program
 ;******************************************************************************
@@ -165,63 +226,38 @@ main:
 	+SAVE_INT_VECTOR old_int
 	+INSTALL_INT_HANDLER my_int_routine
 
-	+VLOAD font_name, font_name_end, 1
+	+VLOAD "HISTBG.BIN", 0
 
-	jsr load_player
-	jsr load_song
+	+VLOAD "PARTFONT.BIN", 1
+	+SLOAD "ZSBG.BIN"
+	+SET_RAM_BANK 2
+	+SLOAD "HISTMUSIC.ZSM", RAM_BANK_START, 1
+	+SET_RAM_BANK 3
+	+SLOAD "GLOOMY.ZSM", RAM_BANK_START, 1
+
 	lda #2
 	jsr ZSTART
 	jsr show_intro
 
 	jsr CHRIN
+	jsr ZDISABLE_LOOP
 	ldx #<wait_for_end
 	ldy #>wait_for_end
 	jsr ZSET_CALLBACK
--	wai
-	lda mahh
-	bne -
-	jsr ZCLEAR_CALLBACK
+
+	jsr CHRIN
 
 	+RESTORE_INT_VECTOR old_int
 	jsr CHRIN
 
 	rts
-mahh !byte 1
+
 wait_for_end:
 	jsr ZSTOP
-	stz mahh
+	lda #3
+	jsr ZSTART
 	rts
-
-load_song:
-	lda	#1							; Logical file number (must be unique)
-	ldx	#8							; Device number (8 local filesystem)
-	ldy	#2							; Secondary command 2 = headerless load
-	jsr	SETLFS
-	lda	#(hist_music_end-hist_music)	; Length of filename
-	ldx	#<hist_music					; Address of filename
-	ldy	#>hist_music
-	jsr	SETNAM
-	lda #2
-	sta RAM_BANK
-	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	ldx #<RAM_BANK_START
-	ldy #>RAM_BANK_START
-	jsr	LOAD
-	rts
-
-load_player:
-	lda	#1							; Logical file number (must be unique)
-	ldx	#8							; Device number (8 local filesystem)
-	ldy	#1							; Secondary command 1 = use addr in header of file
-	jsr	SETLFS
-	lda	#(zsbg_name_end-zsbg_name)	; Length of filename
-	ldx	#<zsbg_name					; Address of filename
-	ldy	#>zsbg_name
-	jsr	SETNAM
-	lda	#0							; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	jsr	LOAD
-	rts
-
+	
 my_int_routine:
 	lda VERA_ISR
 	and #$01
@@ -344,7 +380,6 @@ print_str:
 ; Load image into video RAM, set palette and set layer0 to display it
 ;******************************************************************************
 load_img:
-	+VLOAD histbg_name, histbg_name_end, 0
 
 	; Overwrite palette starting at offset 16, but do it backwards for ease of
 	; checking the number of bytes written.
