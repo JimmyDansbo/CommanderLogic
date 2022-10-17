@@ -14,6 +14,7 @@ ZCLEAR_CALLBACK		= $8009
 ZFORCE_LOOP		= $800C
 ZDISABLE_LOOP		= $800F
 ZSET_MUSIC_SPEED	= $8012
+HEADERLESS		= 1
 
 histbg_palette:
 	!word $0100,$0210,$0211,$0410,$0510,$0710,$0321,$0C20
@@ -44,21 +45,25 @@ main:
 	+SAVE_INT_VECTOR old_int
 	+INSTALL_INT_HANDLER my_int_routine
 
+	+WRITE "LOADING IMAGE...", 13
 	+VLOAD "HISTBG.BIN", 0
-
+	+WRITE "LOADING FONT...", 13
 	+VLOAD "PARTFONT.BIN", 1
+	+WRITE "LOADING ZSOUND...", 13
 	+SLOAD "ZSBG.BIN"
+	+WRITE "LOADING MUSIC...", 13
 	+SET_RAM_BANK 2
-	+SLOAD "HISTMUSIC.ZSM", RAM_BANK_START, 1
+	+SLOAD "HISTMUSIC.ZSM", RAM_BANK_START, HEADERLESS
 	+SET_RAM_BANK 3
-	+SLOAD "GLOOMY.ZSM", RAM_BANK_START, 1
+	+SLOAD "GLOOMY.ZSM", RAM_BANK_START, HEADERLESS
+	+SET_RAM_BANK 4
+	+SLOAD "UPBEAT.ZSM", RAM_BANK_START, HEADERLESS
 
 	+SET_RAM_BANK 2
 	jsr	ZSTART
 	jsr	show_intro
 
-	jsr	CHRIN
-	jsr	ZDISABLE_LOOP
+;	jsr	CHRIN
 	ldx	#<wait_for_end
 	ldy	#>wait_for_end
 	jsr	ZSET_CALLBACK
@@ -69,13 +74,42 @@ main:
 	jsr	CHRIN
 
 	rts
-
+mahh	!byte	0
 wait_for_end:
+	inc	mahh
+	lda	mahh
+	cmp	#1
+	bne	+
 	jsr	ZSTOP
 	+SET_RAM_BANK 3
 	jsr	ZSTART
+	ldx	#<wait_for_end
+	ldy	#>wait_for_end
+	jsr	ZSET_CALLBACK
 	rts
-	
++	cmp	#4
+	bne	+
+	jsr	ZSTOP
+	+SET_RAM_BANK 4
+	jsr	ZSTART
+	ldx	#<wait_for_end
+	ldy	#>wait_for_end
+	jsr	ZSET_CALLBACK
+	rts
++	cmp	#7
+	bne	+
+	jsr	ZSTOP
+	+SET_RAM_BANK 2
+	jsr	ZSTART
+	ldx	#<wait_for_end
+	ldy	#>wait_for_end
+	jsr	ZSET_CALLBACK
+	rts
++	cmp	#8
+	bne	+
+	stz	mahh
++	rts
+
 my_int_routine:
 	lda	VERA_ISR
 	and	#$01
