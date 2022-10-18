@@ -96,14 +96,12 @@ main:
 	rts
 
 switch_to_game_music:
+	jsr	ZCLEAR_CALLBACK
 	jsr	ZSTOPMUSIC
 	lda	#3		; RAM bank with game music
 	ldx	#<RAM_BANK_START
 	ldy	#>RAM_BANK_START
 	jsr	ZSTARTMUSIC
-	ldx	#<@end		; Setting callback to an rts as a workaround.
-	ldy	#>@end		; It seems ZCLEAR_CALLBACK is not working
-	jsr	ZSET_CALLBACK
 @end:	rts
 
 ;******************************************************************************
