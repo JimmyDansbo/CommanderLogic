@@ -130,9 +130,30 @@ MACROS_INC=1
 ; Write a string at specified coordinates using kernal functions
 ;******************************************************************************
 ; .str:		String to to write
+; [.chr]:	Extra charater to write after string OR x&y coordinates
 ; [.xc:		X coordinate - optional
 ; .yc]:		Y coordinate - optional, but required if .xc present
 ;******************************************************************************
+!macro WRITE .str {
+	bra	+
+.locstr:!text .str,0
++	lda	#<.locstr
+	sta	TMP_PTR0
+	lda	#>.locstr
+	sta	TMP_PTR0+1
+	jsr	print_str
+}
+!macro WRITE .str, .chr {
+	bra	+
+.locstr:!text .str,0
++	lda	#<.locstr
+	sta	TMP_PTR0
+	lda	#>.locstr
+	sta	TMP_PTR0+1
+	jsr	print_str
+	lda	#.chr
+	jsr	CHROUT
+}
 !macro WRITE .str, .xc, .yc {
 	bra	+
 .locstr:!text	.str,0
@@ -140,15 +161,6 @@ MACROS_INC=1
 	ldy	#.xc
 	jsr	PLOT
 	lda	#<.locstr
-	sta	TMP_PTR0
-	lda	#>.locstr
-	sta	TMP_PTR0+1
-	jsr	print_str
-}
-!macro WRITE .str {
-	bra	+
-.locstr:!text .str,0
-+	lda	#<.locstr
 	sta	TMP_PTR0
 	lda	#>.locstr
 	sta	TMP_PTR0+1
