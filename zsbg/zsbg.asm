@@ -1,125 +1,221 @@
 .include "zsmplayer.inc"
 
-; Background player for BASIC environment. Load a ZSM into HIRAM at
-; address $A000, bank 2 and then use the API to start/stop playback.
-; e.g.:
-; READY
-; LOAD "KENSTAGE.ZSM",8,2,$A000
-;
-; SYS $8000
-;
-IRQVec=$0314
+; Wrapper for the zsound library to be able to use it with ACME assembler
 
-; "API" - these are simple interfaces for SYS calls to use to interact
-; with the player. Functions are start, stop, speed, and uninstall.
-; start = initialize the player and install IRQ (if needed)
-; stop  = stops music and restores the original IRQ vector at $314
-; set_music_speed = direct call to zsm player API. Expects X/Y to hold
-; 					the playback speed in Hz.
-;
+; *** Move later *** IRQVec=$0314
+
+; All it does is create a jumptable into the functions of the zsound library
+
 ; use STARTUP segment to ensure these are found at the memory address where
 ; the program is loaded.
 .segment "STARTUP"
-	jmp	start			; SYS call for starting the music
-	jmp stop			; SYS call to uninstall the player IRQ
+	jmp init_player
+	jmp stepmusic
+	jmp playmusic
+	jmp playmusic_IRQ
+	jmp startmusic
+	jmp stopmusic
+	jmp set_music_speed
+	jmp force_loop
+	jmp set_loop
+	jmp disable_loop
 	jmp set_callback
 	jmp clear_callback
-	jmp force_loop
-	jmp disable_loop
-	jmp set_music_speed	; SYS call for adjusting playback speed
+	jmp get_music_speed
 
-
-; set_music_speed and stopmusic are directly part of the player library and
-; do not use any front-end code from this shell
-
-
-;-----------------------------------------------------------------------
-; start: Starts the music in bank $A000, bank 2. Installs IRQ if not already installed.
-;
-; Arguments: None
-; Returns: None
-; Affects: A,X,Y
-;-----------------------------------------------------------------------
-.segment "CODE"
-.proc start: near
-	pha					; Save bank number
-	jsr	check_irq		; If IRQ is already installed, skip player init and
-	beq	start_song		; just start the music playback.
-	; initialize player and install IRQ handler to vector at $314
-	jsr init_player
-	sei					; disable Interrupts while modifying the IRQ vector
-	; save current IRQ vector to jmp into it after playmusic call
-	lda IRQVec
-	sta kernal_irq
-	lda IRQVec+1
-	sta kernal_irq+1
-	; install player's IRQ handler
-	lda #<irq_handler
-	sta IRQVec
-	lda #>irq_handler
-	sta IRQVec+1
-	cli					; resume Interrupt processing
-start_song:
-	; pass play address of $A000, bank 2
-	pla		; A = bank ID, saved on stack at beginning of function
-	ldx #0		; X = <address
-	ldy #$A0	; Y = >address
-	jsr startmusic
-	rts			; return to BASIC
-.endproc
-
-;-----------------------------------------------------------------------
-; stop: Stops the music and removes IRQ if not already removed.
-;
-; Arguments: None
-; Returns: None
-; Affects: A,X,Y (stopmusic affects X and Y)
-;-----------------------------------------------------------------------
-.proc stop: near
-	jsr	stopmusic
-	jsr check_irq
-	bne	done			; if IRQ not installed, skip IRQ removal
-	sei
-	lda	kernal_irq
-	sta	IRQVec
-	lda kernal_irq+1
-	sta IRQVec+1
-	cli
-done:
-	rts
-.endproc
-
-;-----------------------------------------------------------------------
-; irq_handler: Calls the once-per-frame playback routine.
-;
-; Arguments: None
-; Returns: None
-; Affects: None
-;
-; Note that this is not a .proc because kernal_irq symbol needs to be
-; exposed to the (un)install/check routines.
-;-----------------------------------------------------------------------
-irq_handler:
-	jsr	playmusic_IRQ	; call the IRQ-safe playback function
-kernal_irq := (* + 1)
-	jmp	$FFFF	; Installation overwrites this with previous vector
-						; value from ($0314)
-
-
-;-----------------------------------------------------------------------
-; check_irq: Checks whether irq_handler is currently installed at $314
-;
-; Arguments: None
-; Returns: Zero flag: 0=installed 1=not installed
+;..............
+; init_player :
+; ===========================================================================
+; Arguments: (none)
+; Returns: (none)
 ; Affects: A
-;-----------------------------------------------------------------------
-.segment "CODE"
-.proc check_irq: near
-	lda	#<irq_handler
-	cmp IRQVec
-	bne	done
-	lda #>irq_handler
-	cmp IRQVec+1
-done:
-	rts
-.endproc
+; ---------------------------------------------------------------------------
+; Call this before using any of the other routines.
+;
+; Initializes the memory locations used by ZSM player to a stopped playback
+; state, with the data pointer pointing at a dummy "end-of-data" command frame.
+
+
+;............
+; playmusic :
+; ===========================================================================
+; Arguments: none
+; Returns: none
+; Affects: See stepmusic
+; ---------------------------------------------------------------------------
+; 60hz frontend for stepmusic.
+; Call it once per frame to play ZSM music.
+;
+; Playmusic calls stepmusic however many times is determined from the ZSM tick
+; rate header information. This function does not "smooth" time - i.e. it
+; just calls stepmusic N times in a row. For more accurate timing
+; you should generate your own timing source and call stepmusic directly.
+;
+; NOTE: playmusic calls stepmusic, WHICH IS NOT IRQ SAFE! Use playmusic_IRQ instead
+;       if you wish to run the music update during the IRQ handler, or else your
+;		handler should save and restore the VERA ctrl register and the address
+;		registers for the data0 data port.
+
+
+;................
+; playmusic_IRQ :
+; ===========================================================================
+; IRQ-safe version of playmusic, which restores VERA registers and the active
+; HiRAM bank.
+;
+; It does NOT save or restore the CPU registers. Your IRQ handler should
+; pull those from the stack prior to RTI as usual if not jumping into the
+; Kernal's once per frame routine.
+;
+; Alternatively, you can use this interface as a VERA-safe call from outside
+; of IRQ handlers. A,X,and Y are still clobbered by stepmusic.
+
+
+;............
+; stepmusic :
+; ===========================================================================
+; Arguments: (none)
+; Returns: Carry flag: (currently broken) 0=playing, 1=stopped or looped
+; Affects: A,X,Y, VERA CTRL and data port 0 address registers
+; ---------------------------------------------------------------------------
+; Advances the music by one tick.
+; Music must be initialized by startmusic before this will have any effect.
+;
+; This routine may be removed from the API in future revisions!
+;
+; Call as many times per frame as required by the ZSM's playback rate.
+; (usually 60Hz - once per frame)
+; THIS ROUTINE IS NOT SAFE to call directly during IRQ, as it clobbers VERA
+; registers w/o fixing them (for speed reasons). If your program
+; is designed to run the music player during an IRQ, use one of the IRQ-safe
+; wrapper functions that save and restore VERA before calling this
+; core routine, or else be sure to save the states of the affected VERA registers
+
+
+;-----------------------------------------------------[Music Control]--------
+
+
+;.............
+; startmusic :
+; ===========================================================================
+; Arguments:
+;	A	: HIRAM bank of tune
+;	XY	: Memory address of beginning of ZSM header
+; Returns: Carry flag: 0=success, 1=fail
+; Affects: A,X,Y
+; ---------------------------------------------------------------------------
+; Uses the ZSM header to determine the default playback parameters.
+; Copies them into the active data structures, and adjusts header pointers
+; such as loop and PCM (future) sample bank offsets relative to where the
+; ZSM was actually loaded into memory.
+;
+; Calls setmusicspeed with the song's default play speed from header.
+; Defaults the looping behavior based on the ZSM being played. If the tune
+; contains a loop, the playback is set for infinite loop mode. If it does
+; not, the loop pointer is set to the beginning of the tune, but looping
+; remains disabled.
+; You may call set_loop, force_loop, or disable_loop to modify these defaults
+; afterwards.
+
+
+;............
+; stopmusic :
+; ===========================================================================
+; Arguments: (none)
+; Returns: (none)
+; Affects: (none)
+; ---------------------------------------------------------------------------
+; Halts music playback, silences all voices used by the current tune,
+; and clears music channel mask
+
+
+; ------------------------------------------------[On-The-Fly Controls]------
+
+
+;................
+; setmusicspeed :
+; ===========================================================================
+; Arguments:
+;	X/Y	: Playback speed in Hz. (x=lo, y=hi)
+; Returns: (none)
+; Affects: A,X,Y
+; ---------------------------------------------------------------------------
+; Converts Hz into ticks/frame, and adjusts playback speed to the new rate.
+; Setting a 60hz song to play back at 120hz will play at double speed and
+; setting it to 30hz will play at 1/2 speed.
+; (I suppose I should make an accessor function to return the native speed
+; of a ZSM so that you don't have to guess in order to make calculated speed
+; changes)
+
+
+;.............
+; force_loop :
+; ===========================================================================
+; Arguments: .A = number of times to loop the music. 0 = infinite
+; Returns: none
+; Affects: none
+; ---------------------------------------------------------------------------
+; Note that if the music was intended to be a one-shot playback (i.e. contains
+; no loop), this will force looping play of the entire song. Use set_loop
+; to modify the looper's behavior without forcing looping play of non-looped
+; songs.
+
+
+;...........
+; set_loop :
+; ===========================================================================
+; Arguments: .A = number of times to loop the music. 0 = infinite
+; Returns: none
+; Affects: none
+; ---------------------------------------------------------------------------
+; Sets the number of repeats that loopback mode will perform after the current
+; pass through the song is finished. If the playback mode is one-shot (no looping)
+; then this will have no effect.
+
+
+;...............
+; disable_loop :
+; ===========================================================================
+; Arguments: none
+; Returns: none
+; Affects: none
+; ---------------------------------------------------------------------------
+; When music reaches EOF, playback will stop, regardless of loops in the tune.
+; Has no effect if looping was not already enabled.
+
+
+;-----------------------------------------------------[Information]----------
+
+
+;...............
+; set_callback :
+; ===========================================================================
+; Arguments:
+;	.XY = address of callback function
+; Returns: none
+; Affects: none
+; ---------------------------------------------------------------------------
+; Sets a notification callback whenever a tune finishes or loops.
+; The callback passes the following parameters:
+; Z=0 if music is stopped, Z=1 if music is playing
+; .A = number of remaining loops
+
+;.................
+; clear_callback :
+; ===========================================================================
+; Arguments: none
+; Returns: none
+; Affects: A
+; ---------------------------------------------------------------------------
+; Disables the EOF notification callback
+
+;..................
+; get_music_speed :
+; ===========================================================================
+; Arguments: none
+; Returns: .XY = song's play rate in Hz
+; Affects: none
+; ---------------------------------------------------------------------------
+; This function returns the default playback rate in Hz of the active song.
+; This is NOT the current playback speed, but the speed in the song's header.
+
