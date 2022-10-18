@@ -129,12 +129,11 @@ MACROS_INC=1
 ;******************************************************************************
 ; Write a string at specified coordinates using kernal functions
 ;******************************************************************************
-; .xc:		X coordinate
-; .yc:		Y coordinate
 ; .str:		String to to write
-; [.nodelay]:	If set, the string is just printed without any delay between chars
+; [.xc:		X coordinate - optional
+; .yc]:		Y coordinate - optional, but required if .xc present
 ;******************************************************************************
-!macro WRITE_XY .xc, .yc, .str, .nodelay {
+!macro WRITE .str, .xc, .yc {
 	bra	+
 .locstr:!text	.str,0
 +	ldx	#.yc
@@ -146,19 +145,6 @@ MACROS_INC=1
 	sta	TMP_PTR0+1
 	jsr	print_str
 }
-!macro WRITE_XY .xc, .yc, .str {
-	bra	+
-.locstr:!text	.str,0
-+	ldx	#.yc
-	ldy	#.xc
-	jsr	PLOT
-	lda	#<.locstr
-	sta	TMP_PTR0
-	lda	#>.locstr
-	sta	TMP_PTR0+1
-	jsr	print_delayed_str
-}
-
 !macro WRITE .str {
 	bra	+
 .locstr:!text .str,0
@@ -168,18 +154,13 @@ MACROS_INC=1
 	sta	TMP_PTR0+1
 	jsr	print_str
 }
-!macro WRITE .str, .chr {
-	bra	+
-.locstr:!text .str,0
-+	lda	#<.locstr
-	sta	TMP_PTR0
-	lda	#>.locstr
-	sta	TMP_PTR0+1
-	jsr	print_str
-	lda	#.chr
-	jsr	CHROUT
-}
 
+!macro INC16 .num {
+	inc	.num
+	bne	+
+	inc	.num+1
++
+}
 
 ;******************************************************************************
 ; Set the RAM bank
