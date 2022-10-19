@@ -1,6 +1,21 @@
 !ifdef MACROS_INC !eof
 MACROS_INC=1
 
+!macro DRAW_GATE .gate, .xc, .yc, .color {
+	lda	#.color
+	sta	gate_color
+	ldx	#.xc
+	ldy	#$B0+.xc
+	lda	#.gate
+	jsr	draw_gate
+}
+!macro DRAW_GATE .gate, .xc, .yc {
+	ldx	#.xc
+	ldy	#$B0+.xc
+	lda	#.gate
+	jsr	draw_gate
+}
+
 ;******************************************************************************
 ; Use PETSCII codes to set foreground and background color
 ;******************************************************************************
@@ -167,6 +182,11 @@ MACROS_INC=1
 	jsr	print_str
 }
 
+;******************************************************************************
+; Increment a 16 bit value
+;******************************************************************************
+; .num:		Address of LSB of number to be incremented
+;******************************************************************************
 !macro INC16 .num {
 	inc	.num
 	bne	+

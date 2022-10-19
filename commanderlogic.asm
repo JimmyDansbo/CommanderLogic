@@ -4,6 +4,7 @@
 +SYS_LINE
 !src "vera0.9.inc"
 !src "macros.inc"
+!src "tilefuncs.inc"
 
 	jmp	main
 
@@ -25,12 +26,16 @@ HEADERLESS		= 1
 DELAY_PRESET		= 1
 COLOR_DELAY_PRESET	= 70
 
+gate_color:
+	!byte	0
 semaphore:
 	!byte	0
-
 histbg_palette:
 	!word	$0100,$0210,$0211,$0410,$0510,$0710,$0321,$0C20
 	!word	$0532,$0732,$0A21,$0E41,$0E71,$0C95,$0FB1,$0FE2
+tile_palette:
+	!word	$0001,$0111,$0111,$0111,$0211,$0211,$0211,$0211
+	!word	$0321,$0321,$0421,$0421,$0532,$0631,$0742,$0742
 
 old_int:!word	$0000		; Hold address of original interrupt handler
 
@@ -43,61 +48,156 @@ color_change:
 cur_col:!byte	0
 colors:	!byte	WHITE,LIGHTGRAY,YELLOW,RED,DARKGRAY,ORANGE,BROWN,0
 intro_text:
-	!text	3,1,PET_MIDGRAY,	"THE YEAR IS 2525. HUMANKIND HAS",0
-	!text	2,2,PET_MIDGRAY,	"SCORCHED THE SKY AND DESTROYED THE",0
-	!text	2,3,PET_MIDGRAY,	"EARTHS SURFACE, MAKING IT ALL BUT",0
-	!text	14,5, PET_WHITE,	"UNINHABITABLE",0
-	!text	3,7,PET_MIDGRAY,	"YOU FIND YOURSELF IN ONE OF THE",0
-	!text	2,8,PET_MIDGRAY,	"LAST LIVEABLE PLACES. TOGETHER WITH",0
-	!text	2,9,PET_MIDGRAY,	"OTHER SURVIVORS, YOU FIGHT FOR YOUR",0
-	!text	15,11,PET_DARKGRAY,	"EXISTENCE",0
-	!text	2,13, PET_WHITE,	"TO REBUILD SOCIETY, ELECTRONICS AND",0
-	!text	2,14, PET_WHITE,	"COMPUTERS WILL BE NECESSARY.",0
-	!text	2,16, PET_WHITE,	"YOU ALONE HAVE THE ABILITY TO SAVE",0
-	!text	4,17, PET_WHITE,	"SOCIETY BY DESIGNING A CPU AND",0
-	!text	4,18, PET_WHITE,	"ENABLE A NEW BEGINNING FOR THE",0
-	!text	13,19,PET_WHITE,	"DIGITAL AGE.",0
-	!text	2,21, PET_WHITE,	"YOUR FELLOW SURVIVORS HAVE FOUND A",0
-	!text	2,22, PET_WHITE,	"STOCK OF OLD, BUT SEEMINGLY WORKING",0
-	!text	11,23,PET_WHITE,	"ELECTRONIC PARTS.",0
-	!text	3,25, PET_WHITE,	"YOUR TASK:  IDENTIFY THE FUNCTION",0
-	!text	2,26, PET_WHITE,	"OF THE DIFFERENT COMPONENTS AND USE",0
-	!text	2,27, PET_WHITE,	"THEM TO BUILD THE NEW WORLDS FIRST",0
-	!text	7,28, PET_WHITE,	"CENTRAL PROCESSING UNIT",0,0
+	!text	3,   1, PET_MIDGRAY,	"THE YEAR IS 2525. HUMANKIND HAS",0
+	!text	2,   2, PET_MIDGRAY,	"SCORCHED THE SKY AND DESTROYED THE",0
+	!text	2,   3, PET_MIDGRAY,	"EARTHS SURFACE, MAKING IT ALL BUT",0
+	!text	14,  5, PET_WHITE,	"UNINHABITABLE",0
+	!text	3,   7, PET_MIDGRAY,	"YOU FIND YOURSELF IN ONE OF THE",0
+	!text	2,   8, PET_MIDGRAY,	"LAST LIVEABLE PLACES. TOGETHER WITH",0
+	!text	2,   9, PET_MIDGRAY,	"OTHER SURVIVORS, YOU FIGHT FOR YOUR",0
+	!text	15, 11, PET_DARKGRAY,	"EXISTENCE",0
+	!text	2,  13, PET_WHITE,	"TO REBUILD SOCIETY, ELECTRONICS AND",0
+	!text	2,  14, PET_WHITE,	"COMPUTERS WILL BE NECESSARY.",0
+	!text	2,  16, PET_WHITE,	"YOU ALONE HAVE THE ABILITY TO SAVE",0
+	!text	4,  17, PET_WHITE,	"SOCIETY BY DESIGNING A CPU AND",0
+	!text	4,  18, PET_WHITE,	"ENABLE A NEW BEGINNING FOR THE",0
+	!text	13, 19, PET_WHITE,	"DIGITAL AGE.",0
+	!text	2,  21, PET_WHITE,	"YOUR FELLOW SURVIVORS HAVE FOUND A",0
+	!text	2,  22, PET_WHITE,	"STOCK OF OLD, BUT SEEMINGLY WORKING",0
+	!text	9,  23, PET_WHITE,	"ELECTRONIC COMPONENTS.",0
+	!text	3,  25, PET_WHITE,	"YOUR TASK:  IDENTIFY THE FUNCTION",0
+	!text	7,  26, PET_WHITE,	"OF THE COMPONENTS AND USE",0
+	!text	2,  27, PET_WHITE,	"THEM TO BUILD THE NEW WORLDS FIRST",0
+	!text	7,  28, PET_WHITE,	"CENTRAL PROCESSING UNIT",0,0
+
+; STORY:
+; IT SEEMS THAT ALL OF THE
+; COMPONENTS ARE OF THE
+; SAME TYPE, BUT THERE IS NO
+; INFORMATION ON WHAT TYPE
+; OF COMPONENT IT IS.
+; TO HAVE ANY CHANCE OF
+; BUILDING A CPU, YOU NEED
+; TO IDENTIFY THE FUNCTION
+; OF THE COMPONENTS
+
+; TASK:
+; IDENTIFY FUNCTION
+; OF THE COMPONENT
 
 ;******************************************************************************
 ; Entry point of the program
 ;******************************************************************************
 main:
-	jsr	initialize
+	jsr	initialize	; Load assets
+	jsr	intro		; Show the intro
 
-	jsr	intro
-
+	; The callback function changes from intro music to game music
 	ldx	#<switch_to_game_music
 	ldy	#>switch_to_game_music
 	jsr	ZSET_CALLBACK
+
+	lda	#SCR_MOD_80x60
+	clc
+	jsr	Screen_set_mode
+	jsr	init_game
 
 @loop:	wai
 	lda	semaphore
 	bne	@loop		; Check if VSYNC has happened
 	inc	semaphore	; Set semaphore to wait for next VSYNC
 	jsr	playmusic	; Ensure music is playing
-	bra	@loop
+	jsr	GETIN
+	beq	@loop
 
-
-;	lda	#SCR_MOD_80x60
-;	jsr	Screen_set_mode
-
-;	jsr	CHRIN
-
-;	+RESTORE_INT_VECTOR old_int
-;	jsr	CHRIN
-
+	jsr	ZSTOPMUSIC
+	+RESTORE_INT_VECTOR old_int
 	rts
 
+init_game:
+	jsr	show_tile
+	+DRAW_GATE NAND_GATE, 3, 3, (BLUE<<4)+BLACK
+	+WRITE "PROGRESS: 00%", 1, 1
+	+WRITE "YOUR WORKSPACE", 50, 1
+	jsr	draw_board
+
+;******************************************************************************
+; Set layer0 to display 4bpp tiles
+; Tilemap starts at $09600 where the intro image ends
+; Tiles are loaded to $04800 which is the closest address to the end of tilemap
+;******************************************************************************
+show_tile:
+	; Tilemap is 32x32 tiles at 16 colors (4bpp)
+	lda	#(TILES32<<6)+(TILES32<<4)+BPP4	
+	sta	VERA_L0_CONFIG
+
+	; Set the mapbase (equal to 1B000 for normal textmode)
+	lda	#($9600>>9)
+	sta	VERA_L0_MAPBASE
+
+	; Set the tilebase (equal to 1F000 for normal textmode)
+	lda	#(($A800>>11)<<2)+(PIX16<<1)+PIX16
+	sta	VERA_L0_TILEBASE
+	
+	; No scrolling needeed
+	stz	VERA_L0_HSCROLL_L
+	stz	VERA_L0_HSCROLL_H
+	stz	VERA_L0_VSCROLL_L
+	stz	VERA_L0_VSCROLL_H
+
+	; Fill all 32x32 tiles, but do some flipping of the tile
+	+VERA_SET_ADDR $09600, 1
+	lda	#$20
+	ldx	#32
+--	ldy	#32
+-	stz	VERA_DATA0
+	sta	VERA_DATA0
+	cmp	#$20		; If .A=#$20 Then set .A=#$28
+	bne	+
+	lda	#$28		; V-flip set
+	bra	@decy
++	cmp	#$28		; If .A=#$28 then set .A=#$24
+	bne	+
+	lda	#$24		; H-flip set
+	bra	@decy
++	cmp	#$24		; If .A=#$24 then set .A=#$20
+	bne	@decy
+	lda	#$20		; No flip set
+@decy	dey
+	bne	-
+	dex
+	bne	--
+	+VERA_SET_L0 1		; Enable layer 0
+	rts
+
+;******************************************************************************
+; Draw the green board/workspace, also used for clearing the board between
+; levels
+;******************************************************************************
+draw_board:
+	+VERA_SET_ADDR $1EB9F, -1	; color address of bottom right corner
+	lda	#(GREEN<<4)+BLACK	; Green background with black text
+	ldx	#' '			; Space character
+	ldy	#57
+	sty	TMP0			; 3 lines at top of screen for text
+--	ldy	#48
+-	sta	VERA_DATA0		; Write color information
+	stx	VERA_DATA0		; Write character
+	dey
+	bne	-
+	ldy	#$9F			; Reset X coordinate
+	sty	VERA_ADDR_L
+	dec	VERA_ADDR_M		; Decrement Y coordinate
+	dec	TMP0
+	bne	--
+	rts
+
+;******************************************************************************
+; Stop the currently playing music, start the game music and remove the 
+; callback function
+;******************************************************************************
 switch_to_game_music:
 	jsr	ZCLEAR_CALLBACK
-	jsr	ZSTOPMUSIC
 	lda	#3		; RAM bank with game music
 	ldx	#<RAM_BANK_START
 	ldy	#>RAM_BANK_START
@@ -241,21 +341,21 @@ delayed_write:
 ;******************************************************************************
 playmusic:
 	lda	VERA_CTRL
-	pha
+	sta	TMPf
 	lda	VERA_ADDR_H
-	pha
+	sta	TMPe
 	lda	VERA_ADDR_M
-	pha
+	sta	TMPd
 	lda	VERA_ADDR_L
-	pha
+	sta	TMPc
 	jsr	ZPLAYMUSIC
-	pla
+	lda	TMPc
 	sta	VERA_ADDR_L
-	pla
+	lda	TMPd
 	sta	VERA_ADDR_M
-	pla
+	lda	TMPe
 	sta	VERA_ADDR_H
-	pla
+	lda	TMPf
 	sta	VERA_CTRL
 	rts
 
@@ -263,8 +363,9 @@ playmusic:
 ; Load assets and install interrupt handler
 ;******************************************************************************
 initialize:
-	+WRITE "LOADING IMAGE...", 13
+	+WRITE "LOADING IMAGES...", 13
 	+VLOAD "HISTBG.BIN", 0
+	+VLOAD "WALLTILE.BIN", 0
 	+WRITE "LOADING FONT...", 13
 	+VLOAD "PARTFONT.BIN", 1
 	+WRITE "LOADING ZSOUND...", 13
@@ -280,6 +381,14 @@ initialize:
 	+VERA_SET_ADDR $1FA3F, -1
 	ldx	#31
 -	lda	histbg_palette, X
+	sta	VERA_DATA0
+	dex
+	bne	-
+	; Overwrite palette starting at offset 32, but do it backwards for ease of
+	; checking the number of bytes written.
+	+VERA_SET_ADDR $1FA5F, -1
+	ldx	#31
+-	lda	tile_palette, X
 	sta	VERA_DATA0
 	dex
 	bne	-
