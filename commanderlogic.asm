@@ -115,7 +115,7 @@ main:
 	rts
 
 init_game:
-	jsr	show_tile
+	jsr	ena_l0_tilemap
 	+DRAW_GATE NAND_GATE, 3, 3, (BLUE<<4)+BLACK
 	+WRITE "PROGRESS: 00%", 1, 1
 	+WRITE "YOUR WORKSPACE", 50, 1
@@ -126,7 +126,7 @@ init_game:
 ; Tilemap starts at $09600 where the intro image ends
 ; Tiles are loaded to $04800 which is the closest address to the end of tilemap
 ;******************************************************************************
-show_tile:
+ena_l0_tilemap:
 	; Tilemap is 32x32 tiles at 16 colors (4bpp)
 	lda	#(TILES32<<6)+(TILES32<<4)+BPP4	
 	sta	VERA_L0_CONFIG
