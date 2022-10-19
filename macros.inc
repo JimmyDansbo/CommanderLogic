@@ -1,6 +1,14 @@
 !ifdef MACROS_INC !eof
 MACROS_INC=1
 
+;******************************************************************************
+; Use draw_gate function to draw a gate at specified coordinates
+;******************************************************************************
+; .gate:	ID of the gate that should be drawn - see draw_gate function
+; .xc & .yc:	X and Y coordinates for upper left corner of gate
+; [.color]:	Set new color in global gate_color variable, if omitted the 
+;		existing value will be used.
+;******************************************************************************
 !macro DRAW_GATE .gate, .xc, .yc, .color {
 	lda	#.color
 	sta	gate_color
