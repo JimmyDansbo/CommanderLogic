@@ -4,7 +4,7 @@
 +SYS_LINE
 !src "vera0.9.inc"
 !src "macros.inc"
-!src "tilefuncs.inc"
+!src "simfuncs.inc"
 
 	jmp	main
 

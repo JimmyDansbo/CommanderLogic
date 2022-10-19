@@ -1,4 +1,4 @@
-	jmp	TILEFUNCS_END
+	jmp	SIMFUNCS_END
 
 ;******************************************************************************
 ; Function to draw a gate-tile at specific coordinates.
@@ -920,4 +920,4 @@ XNOR_BOTH_INV	= $30
 NOT_GATE	= $32
 OUTPUT		= $34
 
-TILEFUNCS_END:
+SIMFUNCS_END:
