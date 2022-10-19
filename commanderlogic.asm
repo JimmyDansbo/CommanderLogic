@@ -364,12 +364,12 @@ playmusic:
 ;******************************************************************************
 initialize:
 	+WRITE "LOADING IMAGES...", 13
-	+VLOAD "HISTBG.BIN", 0
-	+VLOAD "WALLTILE.BIN", 0
-	+WRITE "LOADING FONT...", 13
-	+VLOAD "PARTFONT.BIN", 1
+	+VLOAD "HISTBG.BIN", 0			; Loads to $00000
+	+VLOAD "WALLTILE.BIN", 0		; Loads to $04800
+	+WRITE "LOADING FONT...", 13		; Loads to $1
+	+VLOAD "PARTFONT.BIN", 1		; Loads to $1F6C0
 	+WRITE "LOADING ZSOUND...", 13
-	+SLOAD "ZSBG.BIN"
+	+SLOAD "ZSBG.BIN"			; Loads to $8000
 	+WRITE "LOADING MUSIC...", 13
 	+SET_RAM_BANK 2
 	+SLOAD "HISTMUSIC.ZSM", RAM_BANK_START, HEADERLESS
