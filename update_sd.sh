@@ -10,6 +10,8 @@ echo "COMLOG.PRG"
 cp COMLOG.PRG sd
 echo "HISTBG.BIN"
 cp HISTBG.BIN sd
+echo "WALLTILE.BIN"
+cp WALLTILE.BIN sd
 echo "PARTFONT.BIN"
 cp PARTFONT.BIN sd
 echo "ZSBG.BIN"
