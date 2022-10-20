@@ -197,12 +197,12 @@ AFLOW_BIT		= %00001000
 ; **************************************************************************
 !macro VERA_GOXY .xc, .yc, .abs {
 	!if .abs = 0 {
-		lda	#.yc
-		clc
-		adc	#$B0
+		lda	#(.yc+$B0)
+;		clc
+;		adc	#$B0
 		sta	VERA_ADDR_M
-		lda	#.xc
-		asl
+		lda	#(.xc<<1)
+;		asl
 		sta	VERA_ADDR_L
 	} else {
 		lda	.yc
@@ -215,9 +215,9 @@ AFLOW_BIT		= %00001000
 	}
 }
 !macro VERA_GOXY .xc, .yc  {
-	lda	#.yc
-	clc
-	adc	#$B0
+	lda	#(.yc+$B0)
+;	clc
+;	adc	#$B0
 	sta	VERA_ADDR_M
 	lda	#(.xc<<1)
 	sta	VERA_ADDR_L
