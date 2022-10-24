@@ -116,8 +116,8 @@ main:
 
 init_game:
 	jsr	ena_l0_tilemap
-	+DRAW_GATE NAND_GATE, 3, 3, (BLUE<<4)+BLACK
-	+WRITE "PROGRESS: 00%", 1, 1
+	+DRAW_GATE UNKNOWN_GATE, 3, 3, (BLUE<<4)+WHITE
+	+WRITE "PROGRESS: 000%", 1, 1
 	+WRITE "YOUR WORKSPACE", 50, 1
 	jsr	draw_board
 
@@ -249,13 +249,21 @@ intro:
 	inc	semaphore	; Set semaphore to wait for next VSYNC
 	jsr	playmusic	; Ensure music is playing
 
-	lda	color_change
+	jsr	GETIN		; Read keyboard
+	cmp	#0		; If no keypress, just continue
 	beq	+
+	cmp	#13		; If ENTER has been pressed,
+	bne	+		; skip the rest of the story
+	rts
+
 	; Only do colorchange when the correct word has been written
++	lda	color_change
+	beq	+
+	; Change color after delay
 	dec	color_delay_cnt
 	bne	+
-	; Change color after delay
 	jsr	change_color
+
 +	dec	delay_counter
 	beq	+
 	bra	@loop
