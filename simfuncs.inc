@@ -33,10 +33,12 @@
 ;	$30 - XNOR gate both inputs inverted
 ;	$32 - NOT gate (inverter)
 ;	$34 - Output
+;	$36 - Unknown gate
 ;******************************************************************************
 draw_gate:
 	pha				; Save gate type on stack
-	+VERA_SET_STRIDE 1
+	lda	#$11			; Set bank and stride = 1
+	sta	VERA_ADDR_H
 	txa				; Calculate X address from X coordinate
 	asl
 	sta	VERA_ADDR_L		; Store X address
@@ -863,6 +865,39 @@ draw_gate:
 	stx	VERA_DATA0
 	sta	VERA_DATA0
 	rts
+@unknown:
+	ldx	#$DD		; Top left
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	ldx	#$45		; Top middle
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	ldx	#$6E		; Top right
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	inc	VERA_ADDR_M
+	sty	VERA_ADDR_L
+	ldx	#$DF		; Left middle
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	ldx	#'?'		; Center
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	ldx	#$6B		; Right middle
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	inc	VERA_ADDR_M
+	sty	VERA_ADDR_L
+	ldx	#$E0		; Bottom left
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	ldx	#$52		; Bottom middle
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	ldx	#$7D		; Bottom right
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+	rts
 @draw_table:
 	!word	@input:
 	!word	@and_gate:
@@ -891,6 +926,7 @@ draw_gate:
 	!word	@xnor_both_inv:
 	!word	@not_gate:
 	!word	@output:
+	!word	@unknown:
 	rts
 INPUT		= $00
 AND_GATE	= $02
@@ -919,5 +955,6 @@ XNOR_BOT_INV	= $2E
 XNOR_BOTH_INV	= $30
 NOT_GATE	= $32
 OUTPUT		= $34
+UNKNOWN_GATE	= $36
 
 SIMFUNCS_END:
