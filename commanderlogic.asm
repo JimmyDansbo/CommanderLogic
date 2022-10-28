@@ -349,21 +349,21 @@ delayed_write:
 ;******************************************************************************
 playmusic:
 	lda	VERA_CTRL
-	sta	TMPf
+	pha
 	lda	VERA_ADDR_H
-	sta	TMPe
+	pha
 	lda	VERA_ADDR_M
-	sta	TMPd
+	pha
 	lda	VERA_ADDR_L
-	sta	TMPc
+	pha
 	jsr	ZPLAYMUSIC
-	lda	TMPc
+	pla
 	sta	VERA_ADDR_L
-	lda	TMPd
+	pla
 	sta	VERA_ADDR_M
-	lda	TMPe
+	pla
 	sta	VERA_ADDR_H
-	lda	TMPf
+	pla
 	sta	VERA_CTRL
 	rts
 
