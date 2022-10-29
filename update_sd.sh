@@ -5,6 +5,8 @@ sudo partprobe /dev/loop0
 echo "Mounting sdcard image"
 mkdir sd
 sudo mount -o uid=1000 /dev/loop0p1 sd
+echo "Deleting all files on card..."
+rm -rf sd/*
 echo "Copying files..."
 echo "COMLOG.PRG"
 cp COMLOG.PRG sd
