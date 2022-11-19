@@ -62,9 +62,9 @@ intro_text:
 	!text	11, 17, PET_WHITE,	"SOLVED EVERY SINGLE",0
 	!text	19, 19, PET_LIGHTRED,	"DAY",0
 	!text	3,  21, PET_WHITE,	"THE OTHER INHABITANTS HAVE CHOSEN",0
-	!text	6,  22, PET_WHITE,	"YOU TO SOLVE PROTO'S PUZLES.",0
+	!text	6,  22, PET_WHITE,	"YOU TO SOLVE PROTO'S PUZZLES.",0
 	!text	4,  24, PET_WHITE,	"YOUR TASK: SOLVE ALL OF PROTO'S",0
-	!text	4,  25, PET_WHITE,	"PUZZLES AND KEEP THE COLONE WITH",0
+	!text	4,  25, PET_WHITE,	"PUZZLES AND KEEP THE COLONY WITH",0
 	!text	18, 27, PET_YELLOW,	"POWER",0,0
 
 ;******************************************************************************
@@ -98,9 +98,9 @@ main:
 
 init_game:
 	jsr	ena_l0_tilemap
-	+DRAW_GATE UNKNOWN_GATE, 3, 3, (BLUE<<4)+WHITE
-	+WRITE "PROGRESS: 000%", 1, 1
-	+WRITE "YOUR WORKSPACE", 50, 1
+	+SET_COLOR PET_WHITE
+	+WRITE "PROGRESS: 0%", 1, 1
+	+WRITE "TODAYS PUZZLE", 50, 1
 	jsr	draw_board
 
 ;******************************************************************************
