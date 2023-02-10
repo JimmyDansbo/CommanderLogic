@@ -13,13 +13,13 @@ MACROS_INC=1
 	lda	#.color
 	sta	gate_color
 	ldx	#.xc
-	ldy	#$B0+.xc
+	ldy	#$B0+.yc
 	lda	#.gate
 	jsr	draw_gate
 }
 !macro DRAW_GATE .gate, .xc, .yc {
 	ldx	#.xc
-	ldy	#$B0+.xc
+	ldy	#$B0+.yc
 	lda	#.gate
 	jsr	draw_gate
 }
