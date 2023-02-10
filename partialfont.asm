@@ -1,7 +1,7 @@
 *=$F000+($100*8)-(40*8)
-; VERA font starts at address $1F0000 and is 256 bytes.
+; VERA font starts at address $1F000 and is 256 bytes.
 ; The bank of the VRAM is set when loading the binary
-; The modified characters occopies the last part of the
+; There are 40 modified characters which occopies the last part of the
 ; Font. The calculation above is:
 ; $F000+(256 characters of 8 bytes each)-(40 characters of 8 bytes each)
 
