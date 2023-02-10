@@ -1,8 +1,31 @@
+
 	jmp	SIMFUNCS_END
+
+!macro DG_PUT_CHAR .char {
+	ldx	#.char
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+}
+!macro DG_PUT_CHAR {
+	stx	VERA_DATA0
+	sta	VERA_DATA0
+}
+!macro DG_INC_LINE {
+	inc	VERA_ADDR_M
+	sty	VERA_ADDR_L
+}
+!macro DG_DEC_LINE {
+	dec	VERA_ADDR_M
+	sty	VERA_ADDR_L
+}
+
 
 ;******************************************************************************
 ; Function to draw a gate-tile at specific coordinates.
 ; Color of the gate is read from the global variable gate_color
+; The function does not add $B0 to the Y coordinate to make it work in VERA
+; For this reason, this function should only be called by the DRAW_GATE macro
+; otherwise, user must ensure that Y coordinate has $B0 added to it before call
 ;******************************************************************************
 ; INPUTS:	.X & .Y - Coordinates of top left corner of gate-tile
 ;		.A - Type of Gate
@@ -34,6 +57,8 @@
 ;	$32 - NOT gate (inverter)
 ;	$34 - Output
 ;	$36 - Unknown gate
+;	$38 - Buffer
+;	$3A - Buffer inverted input
 ;******************************************************************************
 draw_gate:
 	pha				; Save gate type on stack
@@ -47,857 +72,287 @@ draw_gate:
 	ldy	VERA_ADDR_L		; Save X address in .Y register
 	lda	gate_color
 	jmp	(@draw_table,x)
-
+; **** INPUT ****
 @input:
 	inc	VERA_ADDR_M
 	inc	VERA_ADDR_L
 	inc	VERA_ADDR_L
-	ldx	#$FF
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$43
-	stx	VERA_DATA0
-	sta	VERA_DATA0
+	+DG_PUT_CHAR $FF
+	+DG_PUT_CHAR $43
 	rts
-@and_gate:
-	ldx	#$DD		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E2		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E4		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$E6		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$E0		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E3		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E5		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@and_top_inv:
-	ldx	#$DE		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E2		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E4		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$E6		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$E0		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E3		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E5		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
+; **** AND gate ****
 @and_bot_inv:
-	ldx	#$DD		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E2		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E4		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$E6		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$E1		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E3		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E5		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
+	ldx	#$DD
+	bra	+	
 @and_both_inv:
 	ldx	#$DE		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E2		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E4		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$E6		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Middle left
+	+DG_INC_LINE
 	ldx	#$E1		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E3		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E5		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@nand_gate:
-	ldx	#$DD		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E2		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E4		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$E7		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$E0		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E3		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E5		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@nand_top_inv:
+	bra	@and_bot_left
+@and_top_inv:
 	ldx	#$DE		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E2		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E4		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$E7		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$E0		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E3		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E5		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@nand_bot_inv:
+	bra	+
+@and_gate:
 	ldx	#$DD		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E2		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E4		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$E7		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$E1		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E3		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E5		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Middle left
+	+DG_INC_LINE
+	ldx	#$E0		; Bottom Left
+@and_bot_left:
+	+DG_PUT_CHAR
+	+DG_PUT_CHAR $E3	; Bottom Middle
+	+DG_PUT_CHAR $E5	; Bottom Right
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $E6	; Middle right
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $E2	; Top middle
+	+DG_PUT_CHAR $E4	; Top right
 	rts
+; **** NAND gate ****
+@nand_bot_inv:
+	ldx	#$DD
+	bra	+	
 @nand_both_inv:
 	ldx	#$DE		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E2		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E4		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$E7		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Middle left
+	+DG_INC_LINE
 	ldx	#$E1		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E3		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$E5		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
+	bra	@nand_bot_left
+@nand_top_inv:
+	ldx	#$DE		; Top Left
+	bra	+
+@nand_gate:
+	ldx	#$DD		; Top Left
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Middle left
+	+DG_INC_LINE
+	ldx	#$E0		; Bottom Left
+@nand_bot_left:
+	+DG_PUT_CHAR
+	+DG_PUT_CHAR $E3	; Bottom Middle
+	+DG_PUT_CHAR $E5	; Bottom Right
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $E7	; Middle right
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $E2	; Top middle
+	+DG_PUT_CHAR $E4	; Top right
 	rts
-@or_gate:
-	ldx	#$E8		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$ED		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$F1		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EB		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EE		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@or_top_inv:
-	ldx	#$E9		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$ED		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$F1		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EB		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EE		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
+; **** OR gate ****
 @or_bot_inv:
-	ldx	#$E8		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$ED		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$F1		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EC		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EE		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
+	ldx	#$E8
+	bra	+	
 @or_both_inv:
 	ldx	#$E9		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$ED		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$F1		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Middle left
+	+DG_INC_LINE
 	ldx	#$EC		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EE		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@nor_gate:
-	ldx	#$E8		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$ED		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$F2		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EB		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EE		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@nor_top_inv:
+	bra	@or_bot_left
+@or_top_inv:
 	ldx	#$E9		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$ED		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$F2		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EB		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EE		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@nor_bot_inv:
+	bra	+
+@or_gate:
 	ldx	#$E8		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$ED		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$F2		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EC		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EE		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $EA	; Middle left
+	+DG_INC_LINE
+	ldx	#$EB		; Bottom Left
+@or_bot_left:
+	+DG_PUT_CHAR
+	+DG_PUT_CHAR $EE	; Bottom Middle
+	+DG_PUT_CHAR $F0	; Bottom Right
+	+DG_DEC_LINE
+	+DG_PUT_CHAR $EA	; Middle Left
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $F1	; Middle right
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $ED	; Top middle
+	+DG_PUT_CHAR $EF	; Top right
 	rts
+; **** NOR gate ****
+@nor_bot_inv:
+	ldx	#$E8
+	bra	+	
 @nor_both_inv:
 	ldx	#$E9		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$ED		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	VERA_DATA0
-	ldx	#$F2		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Middle left
+	+DG_INC_LINE
 	ldx	#$EC		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EE		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
+	bra	@nor_bot_left
+@nor_top_inv:
+	ldx	#$E9		; Top Left
+	bra	+
+@nor_gate:
+	ldx	#$E8		; Top Left
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $EA	; Middle left
+	+DG_INC_LINE
+	ldx	#$EB		; Bottom Left
+@nor_bot_left:
+	+DG_PUT_CHAR
+	+DG_PUT_CHAR $EE	; Bottom Middle
+	+DG_PUT_CHAR $F0	; Bottom Right
+	+DG_DEC_LINE
+	+DG_PUT_CHAR $EA	; Middle Left
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $F2	; Middle right
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $ED	; Top middle
+	+DG_PUT_CHAR $EF	; Top right
 	rts
-@xor_gate:
-	ldx	#$F3		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F7		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F9
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F1		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$F5		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F8		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@xor_top_inv:
-	ldx	#$F4		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F7		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F9
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F1		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$F5		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F8		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
+; **** XOR gate ****
 @xor_bot_inv:
 	ldx	#$F3		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F7		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F9
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F1		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$F6		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F8		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
+	bra	+	
 @xor_both_inv:
 	ldx	#$F4		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F7		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F9
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F1		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$F6		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F8		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@xnor_gate:
-	ldx	#$F3		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F7		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F9
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F2		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$F5		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F8		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
-@xnor_top_inv:
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Middle left
+	+DG_INC_LINE
+	ldx	#$EC		; Bottom Left
+	bra	@xor_bot_left
+@xor_top_inv:
 	ldx	#$F4		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F7		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F9
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F2		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
+	bra	+
+@xor_gate:
+	ldx	#$F3		; Top Left
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $EA	; Middle left
+	+DG_INC_LINE
 	ldx	#$F5		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F8		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
+@xor_bot_left:
+	+DG_PUT_CHAR
+	+DG_PUT_CHAR $F8	; Bottom Middle
+	+DG_PUT_CHAR $F0	; Bottom Right
+	+DG_DEC_LINE
+	+DG_PUT_CHAR $EA	; Middle Left
+	+DG_PUT_CHAR $F9	; Middle
+	+DG_PUT_CHAR $F1	; Middle right
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $F7	; Top middle
+	+DG_PUT_CHAR $EF	; Top right
 	rts
+; **** XNOR gate ****
 @xnor_bot_inv:
 	ldx	#$F3		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F7		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F9
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F2		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$F6		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F8		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	rts
+	bra	+	
 @xnor_both_inv:
 	ldx	#$F4		; Top Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F7		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$EF		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$EA		; Middle left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F9
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F2		; Middle right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$F6		; Bottom Left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F8		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$F0		; Bottom Right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Middle left
+	+DG_INC_LINE
+	ldx	#$EC		; Bottom Left
+	bra	@xnor_bot_left
+@xnor_top_inv:
+	ldx	#$F4		; Top Left
+	bra	+
+@xnor_gate:
+	ldx	#$F3		; Top Left
++	+DG_PUT_CHAR
+	+DG_INC_LINE
+	+DG_PUT_CHAR $EA	; Middle left
+	+DG_INC_LINE
+	ldx	#$F5		; Bottom Left
+@xnor_bot_left:
+	+DG_PUT_CHAR
+	+DG_PUT_CHAR $F8	; Bottom Middle
+	+DG_PUT_CHAR $F0	; Bottom Right
+	+DG_DEC_LINE
+	+DG_PUT_CHAR $EA	; Middle Left
+	+DG_PUT_CHAR $F9	; Middle
+	+DG_PUT_CHAR $F2	; Middle right
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $F7	; Top middle
+	+DG_PUT_CHAR $EF	; Top right
 	rts
+; **** NOT gate ****
 @not_gate:
-	ldx	#$FA
-	stx	VERA_DATA0
-	sta	VERA_DATA0
++	+DG_INC_LINE
+	+DG_PUT_CHAR $43	; Middle left
+	+DG_PUT_CHAR $FC	; Center
+	ldx	#$FE		; Middle right
+	bra	@buffer_cont
+; **** BUFFER inverted input ****
+@buffer_inv:
+	ldx	#$FD		; Middle left
+	bra	+
+; **** BUFFER ****
+@buffer:
+	ldx	#$43		; Middle left
++	+DG_INC_LINE
+	+DG_PUT_CHAR
+	+DG_PUT_CHAR $FC	; Center
+	ldx	#$43		; Middle right
+@buffer_cont:
+	+DG_PUT_CHAR
+	+DG_DEC_LINE
+	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $FA	; Top middle
+	dec	VERA_ADDR_L
+	dec	VERA_ADDR_L
 	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$FC
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$FE
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$43
-	stx	VERA_DATA0
-	sta	VERA_DATA0
 	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$FB
-	stx	VERA_DATA0
-	sta	VERA_DATA0
+	+DG_PUT_CHAR $FB	; Bottom middle
 	rts
+; **** OUTPUT ****
 @output:
 	inc	VERA_ADDR_M
-	ldx	#$43
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$FF
-	stx	VERA_DATA0
-	sta	VERA_DATA0
+	+DG_PUT_CHAR $43
+	+DG_PUT_CHAR $FF
 	rts
+; **** UNKNOWN gate ****
 @unknown:
-	ldx	#$DD		; Top left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$45		; Top middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$6E		; Top right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$DF		; Left middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#'?'		; Center
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$6B		; Right middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	inc	VERA_ADDR_M
-	sty	VERA_ADDR_L
-	ldx	#$E0		; Bottom left
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$52		; Bottom middle
-	stx	VERA_DATA0
-	sta	VERA_DATA0
-	ldx	#$7D		; Bottom right
-	stx	VERA_DATA0
-	sta	VERA_DATA0
+	+DG_PUT_CHAR $DD	; Top left
+	+DG_PUT_CHAR $45	; Top middle
+	+DG_PUT_CHAR $6E	; Top right
+	+DG_INC_LINE
+	+DG_PUT_CHAR $DF	; Left middle
+	+DG_PUT_CHAR '?'	; Center
+	+DG_PUT_CHAR $6B	; Right middle
+	+DG_INC_LINE
+	+DG_PUT_CHAR $E0	; Bottom left
+	+DG_PUT_CHAR $52	; Bottom middle
+	+DG_PUT_CHAR $7D	; Bottom right
 	rts
+
 @draw_table:
 	!word	@input:
 	!word	@and_gate:
@@ -927,7 +382,9 @@ draw_gate:
 	!word	@not_gate:
 	!word	@output:
 	!word	@unknown:
-	rts
+	!word	@buffer:
+	!word	@buffer_inv
+
 INPUT		= $00
 AND_GATE	= $02
 AND_TOP_INV	= $04
@@ -956,5 +413,7 @@ XNOR_BOTH_INV	= $30
 NOT_GATE	= $32
 OUTPUT		= $34
 UNKNOWN_GATE	= $36
+BUFFER		= $38
+BUFFER_INV	= $3A
 
 SIMFUNCS_END:
