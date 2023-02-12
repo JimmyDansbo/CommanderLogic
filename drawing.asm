@@ -257,7 +257,7 @@ main:
 	+VERA_GOXY $28, $28
 	lda	#$5B
 	sta	VERA_DATA0
-	+PRINT_STR " - $6B CROSS"
+	+PRINT_STR " - $5B CROSS"
 
 	+VERA_GOXY $28, $2A
 	lda	#$D8
