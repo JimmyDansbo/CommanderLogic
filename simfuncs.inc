@@ -1,5 +1,5 @@
-
-	jmp	SIMFUNCS_END
+!ifndef SIMFUNCS_INC {SIMFUNCS_INC}
+!if SIMFUNCS_INC == * {
 
 !macro DG_PUT_CHAR .char {
 	ldx	#.char
@@ -424,4 +424,4 @@ UNKNOWN_GATE	= $36
 BUFFER		= $38
 BUFFER_INV	= $3A
 
-SIMFUNCS_END:
+}

@@ -1,12 +1,10 @@
 !cpu w65c02
 
 !src "cx16.inc"
-+SYS_LINE
++SYS_LINE main
 !src "vera0.9.inc"
 !src "macros.inc"
 !src "simfuncs.inc"
-
-	jmp	main
 
 ZINIT_PLAYER		= $8000
 ZSTEPMUSIC		= ZINIT_PLAYER	  +3
@@ -99,7 +97,7 @@ main:
 init_game:
 	jsr	ena_l0_tilemap
 	+SET_COLOR PET_WHITE
-	+WRITE "PROGRESS: 0%", 1, 1
+	+WRITE "PROGRESS:   0%", 1, 1
 	+WRITE "TODAYS PUZZLE", 50, 1
 	jsr	draw_board
 
