@@ -81,50 +81,6 @@ MACROS_INC=1
 }
 
 ;******************************************************************************
-; Load a binary file directly into VRAM.
-; If address is not specified as parameter, it must be present in header of file
-;******************************************************************************
-; .name:	Name of the file to load as a text string
-; .bank:	Load to Bank 0 or 1 in VRAM
-; [.addr]:	Optional address to load file to
-;******************************************************************************
-!macro VLOAD .name, .bank {
-	bra +
-.locname:
-	!text	.name
-.len=*-.locname			; Length of .name
-+	lda	#1		; Logical file number (must be unique)
-	ldx	#8		; Device number (8 local filesystem)
-	ldy	#1		; Secondary command 1 = use addr in file
-	jsr	SETLFS
-	lda	#.len		; Length of filename
-	ldx	#<.locname	; Address of filename
-	ldy	#>.locname
-	jsr	SETNAM
-	lda	#.bank+2	; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	jsr	LOAD
-}
-!macro VLOAD .name, .bank, .addr {
-	bra +
-.locname:
-	!text	.name
-.len=*-.locname			; Length of .name
-+	lda	#1		; Logical file number (must be unique)
-	ldx	#8		; Device number (8 local filesystem)
-	ldy	#0		; Secondary command 0 = use addr provided to LOAD
-	jsr	SETLFS
-	lda	#.len		; Length of filename
-	ldx	#<.locname	; Address of filename
-	ldy	#>.locname
-	jsr	SETNAM
-	lda	#.bank+2	; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
-	ldx 	#<.addr
-	ldy 	#>.addr
-	jsr	LOAD
-}
-
-
-;******************************************************************************
 ; Load a binary file to normal system RAM.
 ; If address is not given to macro, it must be present in the 2-byte header of
 ; the file. If .noheader is set, the file is loaded as headerless
