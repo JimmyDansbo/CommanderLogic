@@ -72,13 +72,30 @@ draw_gate:
 	ldy	VERA_ADDR_L		; Save X address in .Y register
 	lda	gate_color
 	jmp	(@draw_table,x)
+
+; **** OUTPUT ****
+@output:
+	inc	VERA_ADDR_M
+	+DG_PUT_CHAR $43
+	+DG_PUT_CHAR $FF
+	+DG_PUT_CHAR $20
+	bra	@xput
 ; **** INPUT ****
 @input:
 	inc	VERA_ADDR_M
-	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $20
 	+DG_PUT_CHAR $FF
 	+DG_PUT_CHAR $43
+@xput:
+	+DG_DEC_LINE
+	+DG_PUT_CHAR $20
+	+DG_PUT_CHAR $20
+	+DG_PUT_CHAR $20
+	+DG_INC_LINE
+	inc	VERA_ADDR_M
+	+DG_PUT_CHAR $20
+	+DG_PUT_CHAR $20
+	+DG_PUT_CHAR $20
 	rts
 ; **** AND gate ****
 @and_bot_inv:
@@ -107,13 +124,12 @@ draw_gate:
 	+DG_PUT_CHAR $E3	; Bottom Middle
 	+DG_PUT_CHAR $E5	; Bottom Right
 	+DG_DEC_LINE
+	inc	VERA_ADDR_L	; Skip middle left
 	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $20	; Center
 	+DG_PUT_CHAR $E6	; Middle right
 	+DG_DEC_LINE
-	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L	; Skip top left
 	inc	VERA_ADDR_L
 	+DG_PUT_CHAR $E2	; Top middle
 	+DG_PUT_CHAR $E4	; Top right
@@ -145,13 +161,12 @@ draw_gate:
 	+DG_PUT_CHAR $E3	; Bottom Middle
 	+DG_PUT_CHAR $E5	; Bottom Right
 	+DG_DEC_LINE
+	inc	VERA_ADDR_L	; Skip middle left
 	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $20	; Center
 	+DG_PUT_CHAR $E7	; Middle right
 	+DG_DEC_LINE
-	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L	; Skip top left
 	inc	VERA_ADDR_L
 	+DG_PUT_CHAR $E2	; Top middle
 	+DG_PUT_CHAR $E4	; Top right
@@ -164,7 +179,7 @@ draw_gate:
 	ldx	#$E9		; Top Left
 +	+DG_PUT_CHAR
 	+DG_INC_LINE
-	+DG_PUT_CHAR $DF	; Middle left
+	+DG_PUT_CHAR $EA	; Middle left
 	+DG_INC_LINE
 	ldx	#$EC		; Bottom Left
 	bra	@or_bot_left
@@ -183,12 +198,12 @@ draw_gate:
 	+DG_PUT_CHAR $EE	; Bottom Middle
 	+DG_PUT_CHAR $F0	; Bottom Right
 	+DG_DEC_LINE
-	+DG_PUT_CHAR $EA	; Middle Left
+	inc	VERA_ADDR_L	; Skip middle left
 	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $20	; Center
 	+DG_PUT_CHAR $F1	; Middle right
 	+DG_DEC_LINE
-	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L	; Skip top left
 	inc	VERA_ADDR_L
 	+DG_PUT_CHAR $ED	; Top middle
 	+DG_PUT_CHAR $EF	; Top right
@@ -201,7 +216,7 @@ draw_gate:
 	ldx	#$E9		; Top Left
 +	+DG_PUT_CHAR
 	+DG_INC_LINE
-	+DG_PUT_CHAR $DF	; Middle left
+	+DG_PUT_CHAR $EA	; Middle left
 	+DG_INC_LINE
 	ldx	#$EC		; Bottom Left
 	bra	@nor_bot_left
@@ -220,12 +235,12 @@ draw_gate:
 	+DG_PUT_CHAR $EE	; Bottom Middle
 	+DG_PUT_CHAR $F0	; Bottom Right
 	+DG_DEC_LINE
-	+DG_PUT_CHAR $EA	; Middle Left
+	inc	VERA_ADDR_L	; Skip middle left
 	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $20	; Center
 	+DG_PUT_CHAR $F2	; Middle right
 	+DG_DEC_LINE
-	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L	; Skip top left
 	inc	VERA_ADDR_L
 	+DG_PUT_CHAR $ED	; Top middle
 	+DG_PUT_CHAR $EF	; Top right
@@ -258,10 +273,10 @@ draw_gate:
 	+DG_PUT_CHAR $F0	; Bottom Right
 	+DG_DEC_LINE
 	+DG_PUT_CHAR $EA	; Middle Left
-	+DG_PUT_CHAR $F9	; Middle
+	+DG_PUT_CHAR $F9	; Center
 	+DG_PUT_CHAR $F1	; Middle right
 	+DG_DEC_LINE
-	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L	; Skip top left
 	inc	VERA_ADDR_L
 	+DG_PUT_CHAR $F7	; Top middle
 	+DG_PUT_CHAR $EF	; Top right
@@ -294,49 +309,42 @@ draw_gate:
 	+DG_PUT_CHAR $F0	; Bottom Right
 	+DG_DEC_LINE
 	+DG_PUT_CHAR $EA	; Middle Left
-	+DG_PUT_CHAR $F9	; Middle
+	+DG_PUT_CHAR $F9	; Center
 	+DG_PUT_CHAR $F2	; Middle right
 	+DG_DEC_LINE
-	inc	VERA_ADDR_L
+	inc	VERA_ADDR_L	; Skip top left
 	inc	VERA_ADDR_L
 	+DG_PUT_CHAR $F7	; Top middle
 	+DG_PUT_CHAR $EF	; Top right
 	rts
 ; **** NOT gate ****
 @not_gate:
-+	+DG_INC_LINE
+	+DG_INC_LINE
 	+DG_PUT_CHAR $43	; Middle left
 	+DG_PUT_CHAR $FC	; Center
-	ldx	#$FE		; Middle right
+	+DG_PUT_CHAR $FE	; Middle right
 	bra	@buffer_cont
 ; **** BUFFER inverted input ****
 @buffer_inv:
-	ldx	#$FD		; Middle left
+	+DG_INC_LINE
+	+DG_PUT_CHAR $FD	; Middle left
 	bra	+
 ; **** BUFFER ****
 @buffer:
-	ldx	#$43		; Middle left
-+	+DG_INC_LINE
-	+DG_PUT_CHAR
-	+DG_PUT_CHAR $FC	; Center
-	ldx	#$43		; Middle right
+	+DG_INC_LINE
+	+DG_PUT_CHAR $43	; Middle left
++	+DG_PUT_CHAR $FC	; Center
+	+DG_PUT_CHAR $43	; Middle right
 @buffer_cont:
-	+DG_PUT_CHAR
 	+DG_DEC_LINE
-	inc	VERA_ADDR_L
-	inc	VERA_ADDR_L
+	+DG_PUT_CHAR $20	; Top left
 	+DG_PUT_CHAR $FA	; Top middle
-	dec	VERA_ADDR_L
-	dec	VERA_ADDR_L
+	+DG_PUT_CHAR $20	; Top right
+	+DG_INC_LINE
 	inc	VERA_ADDR_M
-	inc	VERA_ADDR_M
+	+DG_PUT_CHAR $20	; Bottom left
 	+DG_PUT_CHAR $FB	; Bottom middle
-	rts
-; **** OUTPUT ****
-@output:
-	inc	VERA_ADDR_M
-	+DG_PUT_CHAR $43
-	+DG_PUT_CHAR $FF
+	+DG_PUT_CHAR $20	; Bottom right
 	rts
 ; **** UNKNOWN gate ****
 @unknown:
