@@ -291,68 +291,68 @@ PRIMM		= $FF7D
 
 ; Commander X16 API
 ;clock
-Clock_set_data_time		= $FF4D
-Clock_get_date_time		= $FF50
+Clock_set_data_time	= $FF4D
+Clock_get_date_time	= $FF50
 ;mouse
-Mouse_config			= $FF68
-Mouse_scan			= $FF71
-Mouse_get			= $FF6B
+Mouse_config		= $FF68
+Mouse_scan		= $FF71
+Mouse_get		= $FF6B
 ;joystick
-Joystick_scan			= $FF53
-Joystick_get			= $FF56
+Joystick_scan		= $FF53
+Joystick_get		= $FF56
 ;sprites
-Sprite_set_image		= $FEF0
-Sprite_set_position		= $FEF3
+Sprite_set_image	= $FEF0
+Sprite_set_position	= $FEF3
 ;framebuffer
-FB_init				= $FEF6
-FB_get_info			= $FEF9
-FB_set_palette			= $FEFC
-FB_cursor_position		= $FEFF
-FB_cursor_next_line		= $FF02
-FB_get_pixel			= $FF05
-FB_get_pixels			= $FF08
-FB_set_pixel			= $FF0B
-FB_set_pixels			= $FF0E
-FB_set_8_pixels			= $FF11
-FB_set_8_pixels_opaque		= $FF14
-FB_fill_pixels			= $FF17
-FB_filter_pixels		= $FF1A
-FB_move_pixels			= $FF1D
+FB_init			= $FEF6
+FB_get_info		= $FEF9
+FB_set_palette		= $FEFC
+FB_cursor_position	= $FEFF
+FB_cursor_next_line	= $FF02
+FB_get_pixel		= $FF05
+FB_get_pixels		= $FF08
+FB_set_pixel		= $FF0B
+FB_set_pixels		= $FF0E
+FB_set_8_pixels		= $FF11
+FB_set_8_pixels_opaque	= $FF14
+FB_fill_pixels		= $FF17
+FB_filter_pixels	= $FF1A
+FB_move_pixels		= $FF1D
 ;graphics
-Graph_init			= $FF20
-Graph_clear			= $FF23
-Graph_set_window		= $FF26
-Graph_set_colors		= $FF29
-Graph_draw_line			= $FF2C
-Graph_draw_rect			= $FF2F
-Graph_move_rect			= $FF32
-Graph_draw_oval			= $FF35
-Graph_draw_image		= $FF38
-Graph_set_font			= $FF3B
-Graph_get_char_size		= $FF3E
-Graph_put_char			= $FF41
+Graph_init		= $FF20
+Graph_clear		= $FF23
+Graph_set_window	= $FF26
+Graph_set_colors	= $FF29
+Graph_draw_line		= $FF2C
+Graph_draw_rect		= $FF2F
+Graph_move_rect		= $FF32
+Graph_draw_oval		= $FF35
+Graph_draw_image	= $FF38
+Graph_set_font		= $FF3B
+Graph_get_char_size	= $FF3E
+Graph_put_char		= $FF41
 ;console
-Console_init			= $FEDB
-Console_put_char		= $FEDE
-Console_put_image		= $FED8
-Console_get_char		= $FEE1
+Console_init		= $FEDB
+Console_put_char	= $FEDE
+Console_put_image	= $FED8
+Console_get_char	= $FEE1
 Console_set_paging_message	= $FED5
 ;other
-Memory_fill			= $FEE4
-Memory_copy			= $FEE7
-Memory_crc			= $FEEA
-Memory_decompress		= $FEED
-Entropy_get			= $FECF
-Monitor				= $FF44
-Enter_basic			= $FF47
-Screen_set_mode			= $FF5F
-Screen_set_charset		= $FF62
-JSRFAR				= $FF6E
+Memory_fill		= $FEE4
+Memory_copy		= $FEE7
+Memory_crc		= $FEEA
+Memory_decompress	= $FEED
+Entropy_get		= $FECF
+Monitor			= $FF44
+Enter_basic		= $FF47
+Screen_set_mode		= $FF5F
+Screen_set_charset	= $FF62
+JSRFAR			= $FF6E
 
 ; *****************************************************************************
 ; Save the address of the original interrupt handler
 ; *****************************************************************************
-; USES:		A
+; USES:		.A
 ; OUTPUTS:	Address of old handler will be passed back in .old_handler
 ; *****************************************************************************
 !macro SAVE_INT_VECTOR .old_handler {
@@ -361,26 +361,12 @@ JSRFAR				= $FF6E
 	lda	IRQVECTOR+1
 	sta	.old_handler+1
 }
-; *****************************************************************************
-; Restore the original interrupt handler
-; *****************************************************************************
-; INPUTS:	.old_handler = memory location holding address of old handler
-; USES:		A
-; *****************************************************************************
-!macro RESTORE_INT_VECTOR .old_handler {
-	sei
-	lda	.old_handler
-	sta	IRQVECTOR
-	lda	.old_handler+1
-	sta	IRQVECTOR+1
-	cli
-}
 
 ; *****************************************************************************
 ; Install new interrupt handler
 ; *****************************************************************************
 ; INPUTS:	.handler = address of new interrupt handler
-; USES:		A
+; USES:		.A
 ; *****************************************************************************
 !macro INSTALL_INT_HANDLER .handler {
 	sei			; Disable interrupts
@@ -396,6 +382,23 @@ JSRFAR				= $FF6E
 ;******************************************************************************
 ; Code to enable program to be startet with the RUN command
 ;******************************************************************************
+; INPUT:	[.main] = address of main function. This way it is possible
+;		to jump over variables and code that is placed before the
+;		main function
+;******************************************************************************
+!macro SYS_LINE .main {
+*=$801
+	!word	.next_line		; Pointer to next BASIC line
+	!word	$000A			; Line number $000A = 10
+	!byte	$9E			; SYS BASIC token
+	!byte	48+(.main/1000)%10	; Address where ASM starts in PETSCII
+	!byte	48+(.main/100)%10
+	!byte	48+(.main/10)%10
+	!byte	48+(.main/1)%10
+	!byte	$00			; End of BASIC line
+.next_line:
+	!word	$0000			; End of BASIC program
+}
 !macro SYS_LINE {
 *=$801
 	!word	.next_line		; Pointer to next BASIC line
@@ -415,21 +418,21 @@ JSRFAR				= $FF6E
 ; Get KERNAL version and convert it from 2's compliment number if it is a
 ; pre-release
 ;******************************************************************************
+; USES:		.Y
 ; RETURNS:	.A contains the KERNAL version
 ;		.C cleared if pre-release version
 ;******************************************************************************
 !macro GET_KERNAL_VER {
-	lda	ROM_BANK			; Save current ROM bank
-	tay						; in .Y
+	ldy	ROM_BANK		; Save current ROM bank
 	lda	#KERNAL_BANK		; Set ROM bank to 0
-	sta	ROM_BANK			; are used to set ROM bank
-	lda	KERNALVER			; Read KERNAL version
-	sty	ROM_BANK			; Restore ROM bank
-	sec						; Set carry to show it is release-version
-	bpl	.done				; If positive, we are done
-	eor	#$FF				; Invert and add 1 to convert the 2's
-	clc						; compliment number to the KERNAL version
+	sta	ROM_BANK
+	lda	KERNALVER		; Read KERNAL version
+	sty	ROM_BANK		; Restore ROM bank
+	sec				; Set carry to show it is release-version
+	bpl	.done			; If positive, we are done
+	eor	#$FF			; Invert and add 1 to convert the 2's
+	clc				; compliment number to the KERNAL version
 	adc	#1
-	clc						; Clear carry to show it is pre-release
+	clc				; Clear carry to show it is pre-release
 .done:
 }
