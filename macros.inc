@@ -4,10 +4,11 @@ MACROS_INC=1
 ;******************************************************************************
 ; Use draw_gate function to draw a gate at specified coordinates
 ;******************************************************************************
-; .gate:	ID of the gate that should be drawn - see draw_gate function
-; .xc & .yc:	X and Y coordinates for upper left corner of gate
-; [.color]:	Set new color in global gate_color variable, if omitted the 
-;		existing value will be used.
+; [~].gate:		ID of the gate that should be drawn - see draw_gate 
+; [~].xc & [~].yc:	X and Y coordinates for upper left corner of gate
+; [.color]:		Set new color in global gate_color variable, if omitted 
+;			the existing value will be used.
+; ~:			Parameters prefixed with ~ are expected to be variables
 ;******************************************************************************
 !macro DRAW_GATE .gate, .xc, .yc, .color {
 	lda	#.color
@@ -20,6 +21,42 @@ MACROS_INC=1
 !macro DRAW_GATE .gate, .xc, .yc {
 	ldx	#.xc
 	ldy	#$B0+.yc
+	lda	#.gate
+	jsr	draw_gate
+}
+!macro DRAW_GATE ~.gate, .xc, .yc, .color {
+	lda	#.color
+	sta	gate_color
+	ldx	#.xc
+	ldy	#$B0+.yc
+	lda	.gate
+	jsr	draw_gate
+}
+!macro DRAW_GATE ~.gate, .xc, .yc {
+	ldx	#.xc
+	ldy	#$B0+.yc
+	lda	.gate
+	jsr	draw_gate
+}
+!macro DRAW_GATE ~.gate, ~.xc, ~.yc, .color {
+	lda	#.color
+	sta	gate_color
+	ldx	.xc
+	lda	.yc
+	clc
+	adc	#$B0
+	tay
+	lda	.gate
+	jsr	draw_gate
+}
+!macro DRAW_GATE .gate, ~.xc, ~.yc, .color {
+	lda	#.color
+	sta	gate_color
+	ldx	.xc
+	lda	.yc
+	clc
+	adc	#$B0
+	tay
 	lda	#.gate
 	jsr	draw_gate
 }
@@ -150,6 +187,25 @@ MACROS_INC=1
 }
 
 ;******************************************************************************
+; Move kernal cursor to specified coordinates
+;******************************************************************************
+; .xc & .yc:	Immediate coordinates
+; ~.xc & ~.yc:	Coordinates contained in variables
+;******************************************************************************
+!macro PET_GOXY .xc, .yc {
+	ldx	#.yc
+	ldy	#.xc
+	clc
+	jsr	PLOT
+}
+!macro PET_GOXY ~.xc, ~.yc {
+	ldx	.yc
+	ldy	.xc
+	clc
+	jsr	PLOT
+}
+
+;******************************************************************************
 ; Write a string at specified coordinates using kernal functions
 ;******************************************************************************
 ; .str:		String to to write
@@ -180,16 +236,31 @@ MACROS_INC=1
 !macro WRITE .str, .xc, .yc {
 	bra	+
 .locstr:!text	.str,0
-+	ldx	#.yc
-	ldy	#.xc
-	jsr	PLOT
++	+PET_GOXY .xc, .yc
 	lda	#<.locstr
 	sta	TMP_PTR0
 	lda	#>.locstr
 	sta	TMP_PTR0+1
 	jsr	print_str
 }
-
+!macro WRITE ~.str, .xc, .yc {
+	+PET_GOXY .xc, .yc
+	lda	#<.str
+	sta	TMP_PTR0
+	lda	#>.str
+	sta	TMP_PTR0+1
+	jsr	print_str
+}
+!macro WRITE .str, ~.xc, ~.yc {
+	bra	+
+.locstr:!text	.str,0
++	+PET_GOXY ~.xc, ~.yc
+	lda	#<.locstr
+	sta	TMP_PTR0
+	lda	#>.locstr
+	sta	TMP_PTR0+1
+	jsr	print_str
+}
 ;******************************************************************************
 ; Increment a 16 bit value
 ;******************************************************************************
