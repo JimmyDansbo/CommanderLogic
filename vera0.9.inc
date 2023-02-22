@@ -170,7 +170,7 @@ AFLOW_BIT		= %00001000
 ; **************************************************************************
 ; Set the stride, if it is negative, the DECR bit will be set
 ; **************************************************************************
-; INPUT:	.stride = 4 bit signed inc/dec value - negative val decrements
+; INPUT:	.stride = 4 bit signed inc/dec value - negative val decremsnts
 ; USES:		A register
 ; **************************************************************************
 !macro VERA_SET_STRIDE .stride {
@@ -218,13 +218,13 @@ AFLOW_BIT		= %00001000
 	sta	VERA_ADDR_L
 }
 !macro VERA_GOXY ~.xc, ~.yc {
-	lda	.yc
-	clc
-	adc	#$B0
-	sta	VERA_ADDR_M
-	lda	.xc
-	asl
-	sta	VERA_ADDR_L
+		lda	.yc
+		clc
+		adc	#$B0
+		sta	VERA_ADDR_M
+		lda	.xc
+		asl
+		sta	VERA_ADDR_L
 }
 
 ; **************************************************************************
@@ -315,4 +315,40 @@ AFLOW_BIT		= %00001000
 		ora	#%00100000	; Set Layer1 Enabled bit
 	}
 	sta	VERA_DC_VIDEO
+}
+
+;******************************************************************************
+; Load a binary file directly into VRAM.
+; If address is not specified as parameter, it must be present in header of file
+;******************************************************************************
+; .name_start:	The label at the start of the filename
+; .name_end:	The label at the end of the filename (used for computing length)
+; .bank:		Load to Bank 0 or 1 in VRAM
+; [.addr]:		Optional address to load file to
+;******************************************************************************
+!macro VLOAD .name_start, .name_end, .bank {
+	lda	#1				; Logical file number (must be unique)
+	ldx	#8				; Device number (8 local filesystem)
+	ldy	#1				; Secondary command 1 = use addr in file
+	jsr	$FFBA				; SETLFS
+	lda	#(.name_end-.name_start)	; Length of filename
+	ldx	#<.name_start			; Address of filename
+	ldy	#>.name_start
+	jsr	$FFBD				; SETNAM
+	lda	#.bank+2			; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	jsr	$FFD5				; LOAD
+}
+!macro VLOAD .name_start, .name_end, .bank, .addr {
+	lda	#1				; Logical file number (must be unique)
+	ldx	#8				; Device number (8 local filesystem)
+	ldy	#0				; Secondary command 0 = use addr provided to LOAD
+	jsr	$FFBA				; SETLFS
+	lda	#(.name_end-.name_start)	; Length of filename
+	ldx	#<.name_start			; Address of filename
+	ldy	#>.name_start
+	jsr	$FFBD				; SETNAM
+	lda	#.bank+2			; 0=load, 1=verify, 2=VRAM,0xxxx, 3=VRAM,1xxxx
+	ldx #<.addr
+	ldy #>.addr
+	jsr	$FFD5				; LOAD
 }
