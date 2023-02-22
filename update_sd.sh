@@ -1,6 +1,7 @@
 #!/bin/bash
-echo "Preparing device for sdcard image"
-sudo losetup /dev/loop0 sdcard.img
+if [ "$1" = "" ]; then SDCARD="sdcard.img"; else SDCARD="$1"; fi
+echo "Preparing device for sdcard image: $SDCARD"
+sudo losetup /dev/loop0 $SDCARD
 sudo partprobe /dev/loop0
 echo "Mounting sdcard image"
 mkdir sd
